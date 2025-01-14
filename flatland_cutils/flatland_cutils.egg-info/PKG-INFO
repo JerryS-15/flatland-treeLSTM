@@ -1,0 +1,8 @@
+Metadata-Version: 2.1
+Name: flatland_cutils
+Version: 0.0.1
+Summary: C
+Home-page: https://gitlab.parametrix.cn/parametrix/challenge/flatland-ccs/tree/yuhao_v3
+Author: Yuhao
+Author-email: yuhaojiang@chaocanshu.ai
+Requires-Python: >=3.6
