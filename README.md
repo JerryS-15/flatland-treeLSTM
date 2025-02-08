@@ -1,4 +1,13 @@
+# Flatland-MARL-Application
+
+This is the project cited from a solution of [Multi-Agent Path Finding via Tree LSTM](https://arxiv.org/abs/2210.12933), with the [original repo](https://github.com/RoboEden/flatland-marl) linked.
+
+With the help of the original solution, we can get some promising data for offline reinforcement learning purpose.
+
+Below are the instructions provided by original authors: 
+
 # Flatland-MARL
+
 This is a multi-agent reinforcement learning solution to [Flatland3 challenge](https://www.aicrowd.com/challenges/flatland-3). The solution itself is elaborated on in our paper. 
 
 > Jiang, Yuhao, Kunjie Zhang, Qimai Li, Jiaxin Chen, and Xiaolong Zhu. "[Multi-Agent Path Finding via Tree LSTM](https://arxiv.org/abs/2210.12933)." arXiv preprint arXiv:2210.12933 (2022).
