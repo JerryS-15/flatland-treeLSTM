@@ -17,7 +17,10 @@ from impl_config import FeatureParserConfig as fp
 from plfActor import Actor
 from utils import VideoWriter, debug_show
 
+import math
+
 collect_data_path = ""
+MAX_TIMESTEPS = 1000
 
 def create_random_env():
     return RailEnv(
@@ -112,15 +115,46 @@ if __name__ == "__main__":
 
     # start step loop
     obs = env_wrapper.reset()
-    while True:
+    step_count = 0
+    
+    while step_count < MAX_TIMESTEPS:
+        step_count += 1
         va = env_wrapper.get_valid_actions()
         action = actor.get_actions(obs, va, n_agents)
         next_obs, all_rewards, done = env_wrapper.step(action)
 
-        # print("\nNUM AGENTS: \n", env_wrapper.env.get_num_agents())
-        print(f"NUM AGENTS: {n_agents}")
-        print(f"Observation Shape: {len(obs)}")
-        print(f"Valid actions Shape: {len(va)}")
+        # for agent_id, reward in all_rewards.items():
+        #     print(f"Agent {agent_id} Reward: {reward}")
+        # print(step_count, "\n")
+        # print("ALL Rewards: ", all_rewards)
+
+        # for agent_id in range(min(env_wrapper.env.get_num_agents(), len(obs))):
+        #     # Calculate reward
+        #     dist_target = env_wrapper.env.agents[agent_id].position if env_wrapper.env.agents[agent_id].position else float('inf')
+        #     if dist_target == 0:
+        #         reward = 1  # Arrive
+        #     elif all_rewards[agent_id] < -50:
+        #         reward = -100  # Deadlock
+        #     else:
+        #         print(type(dist_target), dist_target)
+        #         if dist_target == float('inf'):
+        #             reward = -dist_target
+        #         else:
+        #             math.sqrt((dist_target[0] - 0) ** 2 + (dist_target[1] - 0) ** 2)
+        #         # reward = -dist_target  # Distance of not arrive
+
+        #     offline_data.append((
+        #         obs[agent_id],          # observation
+        #         action[agent_id],       # action
+        #         reward,  # rewards
+        #         next_obs[agent_id],     # next observation
+        #         done[agent_id],         # done (if terminate)
+        #     ))
+
+        # # print("\nNUM AGENTS: \n", env_wrapper.env.get_num_agents())
+        # print(f"NUM AGENTS: {n_agents}")
+        # print(f"Observation Shape: {len(obs)}")
+        # print(f"Valid actions Shape: {len(va)}")
 
         # record action of each agent
         for agent_id in range(min(env_wrapper.env.get_num_agents(), len(obs))):
@@ -132,6 +166,8 @@ if __name__ == "__main__":
                 done[agent_id],         # done (if terminate)
             ))
         obs = next_obs
+
+        print(f"[Step {step_count}] Agents: {n_agents}, Obs Shape: {len(obs)}, Valid Actions Shape: {len(va)}")
 
         # rendering
         if args.render:
@@ -153,8 +189,8 @@ if __name__ == "__main__":
             print(f"ARR_RATIO: {arrival_ratio*100:.2f}%")
 
             # save collected data
-            with open("offline_rl_data.pkl", "wb") as f:
+            with open("offline_rl_data_0802.pkl", "wb") as f:
                 pickle.dump(offline_data, f)
-            print("Offline RL data is saved at offline_rl_data.pkl")
+            print("Offline RL data is saved at offline_rl_data_0802.pkl")
             
             break
