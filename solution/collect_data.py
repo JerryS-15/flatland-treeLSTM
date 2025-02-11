@@ -119,9 +119,28 @@ if __name__ == "__main__":
     
     while step_count < MAX_TIMESTEPS:
         step_count += 1
-        va = env_wrapper.get_valid_actions()
+        va = env_wrapper.get_valid_actions() # Valid actions
         action = actor.get_actions(obs, va, n_agents)
         next_obs, all_rewards, done = env_wrapper.step(action)
+        # # Analysis of collected data
+        # print(f"========== Step {step_count} ==========")
+        # print("\nObservation:", type(obs), len(obs))
+        # # print(obs)
+        # print("\nObservation[0]:", type(obs[0]), len(obs[0]))
+        # print("\nObservation details with 17 keys:")
+        # for key, _ in obs[0].items():
+        #     print("\n", key, " ", type(obs[0][key]))
+        #     if type(obs[0][key]) == "class 'numpy.ndarray'":
+        #         print(len(obs[0][key]))
+        # print("\nAction:", type(action), len(action))
+        # # print(action)
+        # # print("\nAgent 1: ", action[1])
+        # # print("\nAgent 15: ", action[15])
+        # print("\nNext Observation:", type(next_obs), len(next_obs))
+        # print("\nall_rewards:", type(all_rewards), len(all_rewards))
+        # # print(all_rewards)
+        # print("\nDone:", type(done), len(done))
+        # print(done)
 
         # for agent_id, reward in all_rewards.items():
         #     print(f"Agent {agent_id} Reward: {reward}")
@@ -157,12 +176,12 @@ if __name__ == "__main__":
         # print(f"Valid actions Shape: {len(va)}")
 
         # record action of each agent
-        for agent_id in range(min(env_wrapper.env.get_num_agents(), len(obs))):
+        for agent_id in range(env_wrapper.env.get_num_agents()):
             offline_data.append((
-                obs[agent_id],          # observation
+                obs,          # observation
                 action[agent_id],       # action
                 all_rewards[agent_id],  # rewards
-                next_obs[agent_id],     # next observation
+                next_obs,     # next observation
                 done[agent_id],         # done (if terminate)
             ))
         obs = next_obs
@@ -189,8 +208,8 @@ if __name__ == "__main__":
             print(f"ARR_RATIO: {arrival_ratio*100:.2f}%")
 
             # save collected data
-            with open("offline_rl_data_0802.pkl", "wb") as f:
+            with open("offline_rl_data_1102.pkl", "wb") as f:
                 pickle.dump(offline_data, f)
-            print("Offline RL data is saved at offline_rl_data_0802.pkl")
+            print("Offline RL data is saved at offline_rl_data_1102.pkl")
             
             break
