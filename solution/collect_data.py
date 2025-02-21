@@ -133,9 +133,11 @@ if __name__ == "__main__":
         #     if type(obs[0][key]) == "class 'numpy.ndarray'":
         #         print(len(obs[0][key]))
         # print("\nAction:", type(action), len(action))
-        # # print(action)
-        # # print("\nAgent 1: ", action[1])
-        # # print("\nAgent 15: ", action[15])
+        # print(action)
+        # aid01 = 1
+        # aid15 = 15
+        # print("\nAgent 1: ", action[aid01])
+        # print("\nAgent 15: ", action[aid15])
         # print("\nNext Observation:", type(next_obs), len(next_obs))
         # print("\nall_rewards:", type(all_rewards), len(all_rewards))
         # # print(all_rewards)
@@ -175,15 +177,22 @@ if __name__ == "__main__":
         # print(f"Observation Shape: {len(obs)}")
         # print(f"Valid actions Shape: {len(va)}")
 
+        offline_data.append((
+            obs,
+            action,
+            all_rewards,
+            next_obs,
+            done,
+        ))
         # record action of each agent
-        for agent_id in range(env_wrapper.env.get_num_agents()):
-            offline_data.append((
-                obs,          # observation
-                action[agent_id],       # action
-                all_rewards[agent_id],  # rewards
-                next_obs,     # next observation
-                done[agent_id],         # done (if terminate)
-            ))
+        # for agent_id in range(n_agents):
+        #     offline_data.append((
+        #         obs,          # observation
+        #         action[agent_id],       # action
+        #         all_rewards[agent_id],  # rewards
+        #         next_obs,     # next observation
+        #         done[agent_id],         # done (if terminate)
+        #     ))
         obs = next_obs
 
         print(f"[Step {step_count}] Agents: {n_agents}, Obs Shape: {len(obs)}, Valid Actions Shape: {len(va)}")
@@ -208,8 +217,11 @@ if __name__ == "__main__":
             print(f"ARR_RATIO: {arrival_ratio*100:.2f}%")
 
             # save collected data
-            with open("offline_rl_data_1102.pkl", "wb") as f:
+            save_path = "offline_rl_data_2003.pkl"
+
+            with open(save_path, "wb") as f:
+                print("Final data: ", type(offline_data), len(offline_data))
                 pickle.dump(offline_data, f)
-            print("Offline RL data is saved at offline_rl_data_1102.pkl")
+            print("Offline RL data is saved at ", save_path)
             
             break
