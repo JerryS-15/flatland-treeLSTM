@@ -110,7 +110,11 @@ if __name__ == "__main__":
     while True:
         va = env_wrapper.get_valid_actions()
         action = actor.get_actions(obs, va, n_agents)
-        obs, all_rewards, done = env_wrapper.step(action)
+        # obs, all_rewards, done = env_wrapper.step(action)
+        obs, all_rewards, done, step_rewards = env_wrapper.step(action)
+
+        # print(f"Step {obs[0]['curr_step']}: ")
+        # print(step_rewards)
 
         if args.render:
             debug_show(env_wrapper.env)
