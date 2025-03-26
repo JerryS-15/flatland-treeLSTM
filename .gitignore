@@ -1,1 +1,3 @@
 debug-environments/
+.DS_Store
+*.pkl
