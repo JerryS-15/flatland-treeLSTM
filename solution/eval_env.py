@@ -93,8 +93,8 @@ class TestEnvWrapper:
 
         arrival_ratio = n_arrival / env.get_num_agents()
         total_reward = sum(list(env.rewards_dict.values()))
-        print("Rewards at final step: ")
-        print(env.rewards_dict)
+        # print("Rewards at final step: ")
+        # print(env.rewards_dict)
         norm_reward = 1 + total_reward / env._max_episode_steps / env.get_num_agents()
 
         return arrival_ratio, total_reward, norm_reward

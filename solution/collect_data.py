@@ -17,10 +17,12 @@ from impl_config import FeatureParserConfig as fp
 from plfActor import Actor
 from utils import VideoWriter, debug_show
 
+import os
 import math
 
 collect_data_path = ""
-MAX_TIMESTEPS = 1000
+MAX_TIMESTEPS = 5000
+NUM_EPISODES = 10
 
 def create_random_env():
     return RailEnv(
@@ -82,12 +84,20 @@ def get_args():
         "--env", default=None, help="path to saved '*.pkl' file of envs"
     )
     parser.add_argument("--save-video", "-s", default=None, help="path to save video")
+    parser.add_argument("--episodes", type=int, default=NUM_EPISODES, help="number of episodes when collecting data")
     args = parser.parse_args()
     return args
 
 
 if __name__ == "__main__":
     args = get_args()
+
+    print("---------------------------------------")
+    print(f"Data Collection Started for {args.episodes} episodes.")
+    print("---------------------------------------")
+
+    if not os.path.exists("./offlineData"):
+        os.makedirs("./offlineData")
 
     # create env
     if args.env is None:
@@ -111,117 +121,105 @@ if __name__ == "__main__":
         video_writer = VideoWriter(args.save_video, args.fps)
 
     # initialize data storage
-    offline_data = []
+    all_offline_data = []
 
-    # start step loop
-    obs = env_wrapper.reset()
-    step_count = 0
-    
-    while step_count < MAX_TIMESTEPS:
-        step_count += 1
-        va = env_wrapper.get_valid_actions() # Valid actions
-        action = actor.get_actions(obs, va, n_agents)
-        next_obs, all_rewards, done = env_wrapper.step(action)
-        # # Analysis of collected data
-        # print(f"========== Step {step_count} ==========")
-        # print("\nObservation:", type(obs), len(obs))
-        # # print(obs)
-        # print("\nObservation[0]:", type(obs[0]), len(obs[0]))
-        # print("\nObservation details with 17 keys:")
-        # for key, _ in obs[0].items():
-        #     print("\n", key, " ", type(obs[0][key]))
-        #     if type(obs[0][key]) == "class 'numpy.ndarray'":
-        #         print(len(obs[0][key]))
-        # print("\nAction:", type(action), len(action))
-        # print(action)
-        # aid01 = 1
-        # aid15 = 15
-        # print("\nAgent 1: ", action[aid01])
-        # print("\nAgent 15: ", action[aid15])
-        # print("\nNext Observation:", type(next_obs), len(next_obs))
-        # print("\nall_rewards:", type(all_rewards), len(all_rewards))
-        # # print(all_rewards)
-        # print("\nDone:", type(done), len(done))
-        # print(done)
+    for episode in range(args.episodes):
+        print(f"Episode {episode + 1}/{args.episodes}")
+        obs = env_wrapper.reset()
+        step_count = 0
+        episode_data = []
 
-        # for agent_id, reward in all_rewards.items():
-        #     print(f"Agent {agent_id} Reward: {reward}")
-        # print(step_count, "\n")
-        # print("ALL Rewards: ", all_rewards)
+        while step_count < MAX_TIMESTEPS:
+            step_count += 1
+            va = env_wrapper.get_valid_actions()
+            action = actor.get_actions(obs, va, n_agents)
+            next_obs, all_rewards, done, step_rewards = env_wrapper.step(action)
 
-        # for agent_id in range(min(env_wrapper.env.get_num_agents(), len(obs))):
-        #     # Calculate reward
-        #     dist_target = env_wrapper.env.agents[agent_id].position if env_wrapper.env.agents[agent_id].position else float('inf')
-        #     if dist_target == 0:
-        #         reward = 1  # Arrive
-        #     elif all_rewards[agent_id] < -50:
-        #         reward = -100  # Deadlock
-        #     else:
-        #         print(type(dist_target), dist_target)
-        #         if dist_target == float('inf'):
-        #             reward = -dist_target
-        #         else:
-        #             math.sqrt((dist_target[0] - 0) ** 2 + (dist_target[1] - 0) ** 2)
-        #         # reward = -dist_target  # Distance of not arrive
+            episode_data.append((
+                obs,
+                action,
+                step_rewards,
+                next_obs,
+                done,
+            ))
+            obs = next_obs
 
-        #     offline_data.append((
-        #         obs[agent_id],          # observation
-        #         action[agent_id],       # action
-        #         reward,  # rewards
-        #         next_obs[agent_id],     # next observation
-        #         done[agent_id],         # done (if terminate)
-        #     ))
+            if args.render:
+                debug_show(env_wrapper.env)
+                sleep(1 / args.fps)
 
-        # # print("\nNUM AGENTS: \n", env_wrapper.env.get_num_agents())
-        # print(f"NUM AGENTS: {n_agents}")
-        # print(f"Observation Shape: {len(obs)}")
-        # print(f"Valid actions Shape: {len(va)}")
-
-        offline_data.append((
-            obs,
-            action,
-            all_rewards,
-            next_obs,
-            done,
-        ))
-        # record action of each agent
-        # for agent_id in range(n_agents):
-        #     offline_data.append((
-        #         obs,          # observation
-        #         action[agent_id],       # action
-        #         all_rewards[agent_id],  # rewards
-        #         next_obs,     # next observation
-        #         done[agent_id],         # done (if terminate)
-        #     ))
-        obs = next_obs
-
-        print(f"[Step {step_count}] Agents: {n_agents}, Obs Shape: {len(obs)}, Valid Actions Shape: {len(va)}")
-
-        # rendering
-        if args.render:
-            debug_show(env_wrapper.env)
-            sleep(1 / args.fps)
-
-        if args.save_video is not None:
-            frame = debug_show(env_wrapper.env, mode="rgb_array")
-            video_writer.write(frame)
-
-        if done["__all__"]:
             if args.save_video is not None:
-                video_writer.close()
-                print(f"Write video to {args.save_video}")
+                frame = debug_show(env_wrapper.env, mode="rgb_array")
+                video_writer.write(frame)
 
-            arrival_ratio, total_reward, norm_reward = env_wrapper.final_metric()
-            print(f"TOTAL_REW: {total_reward}")
-            print(f"NORM_REW: {norm_reward:.4f}")
-            print(f"ARR_RATIO: {arrival_ratio*100:.2f}%")
+            if done["__all__"]:
+                arrival_ratio, total_reward, norm_reward = env_wrapper.final_metric()
+                print(f"TOTAL_REW: {total_reward}, NORM_REW: {norm_reward:.4f}, ARR_RATIO: {arrival_ratio*100:.2f}%, with {len(episode_data)} samples.")
 
-            # save collected data
-            save_path = "offline_rl_data_2003.pkl"
+                break
+        
+        all_offline_data.extend(episode_data)
+    
+    save_path = "offlineData/offline_rl_data_treeLSTM.pkl"
+    with open(save_path, "wb") as f:
+        pickle.dump(all_offline_data, f)
+    print("Offline RL data is saved at ", save_path)
 
-            with open(save_path, "wb") as f:
-                print("Final data: ", type(offline_data), len(offline_data))
-                pickle.dump(offline_data, f)
-            print("Offline RL data is saved at ", save_path)
+    # # start step loop
+    # obs = env_wrapper.reset()
+    # step_count = 0
+    
+    # while step_count < MAX_TIMESTEPS:
+    #     step_count += 1
+    #     va = env_wrapper.get_valid_actions() # Valid actions
+    #     action = actor.get_actions(obs, va, n_agents)
+    #     next_obs, all_rewards, done = env_wrapper.step(action)
+
+    #     offline_data.append((
+    #         obs,
+    #         action,
+    #         all_rewards,
+    #         next_obs,
+    #         done,
+    #     ))
+    #     # record action of each agent
+    #     # for agent_id in range(n_agents):
+    #     #     offline_data.append((
+    #     #         obs,          # observation
+    #     #         action[agent_id],       # action
+    #     #         all_rewards[agent_id],  # rewards
+    #     #         next_obs,     # next observation
+    #     #         done[agent_id],         # done (if terminate)
+    #     #     ))
+    #     obs = next_obs
+
+    #     # print(f"[Step {step_count}] Agents: {n_agents}, Obs Shape: {len(obs)}, Valid Actions Shape: {len(va)}")
+
+    #     # rendering
+    #     if args.render:
+    #         debug_show(env_wrapper.env)
+    #         sleep(1 / args.fps)
+
+    #     if args.save_video is not None:
+    #         frame = debug_show(env_wrapper.env, mode="rgb_array")
+    #         video_writer.write(frame)
+
+    #     if done["__all__"]:
+    #         if args.save_video is not None:
+    #             video_writer.close()
+    #             print(f"Write video to {args.save_video}")
+
+    #         arrival_ratio, total_reward, norm_reward = env_wrapper.final_metric()
+    #         print(f"TOTAL_REW: {total_reward}")
+    #         print(f"NORM_REW: {norm_reward:.4f}")
+    #         print(f"ARR_RATIO: {arrival_ratio*100:.2f}%")
+
+    #         # save collected data
+    #         save_path = "offline_rl_data_2003.pkl"
+
+    #         with open(save_path, "wb") as f:
+    #             print("Final data: ", type(offline_data), len(offline_data))
+    #             pickle.dump(offline_data, f)
+    #         print("Offline RL data is saved at ", save_path)
             
-            break
+    #         break

@@ -114,9 +114,10 @@ if __name__ == "__main__":
         va = env_wrapper.get_valid_actions()
         # print("obs[0][0]: ", type(obs[0]['agent_attr']), len(obs[0]['agent_attr']))
         action = actor.get_actions(obs, va, n_agents)  # BCQ model predicts actions
-        obs, all_rewards, done = env_wrapper.step(action)
+        obs, all_rewards, done, step_rewards = env_wrapper.step(action)
 
         print(f"[Step {step_count}] Agents: {n_agents}, Obs Shape: {len(obs)}, Valid Actions Shape: {len(va)}")
+        print("Step rewards: ", step_rewards)
 
         if args.render:
             debug_show(env_wrapper.env)
