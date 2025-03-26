@@ -62,7 +62,7 @@ def get_args():
         dest="render",
         action="store_const",
         const=False,
-        default=True,
+        default=False,
         help="do not display game window",
     )
     parser.add_argument(
