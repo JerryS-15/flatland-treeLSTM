@@ -139,15 +139,15 @@ class LocalTestEnvWrapper(TestEnvWrapper):
 
         # r(d)_t
         num_departed = sum([1 for agent in self.env.agents if agent.state == TrainState.MOVING])
-        departure_reward = num_departed - self.prev_departed
+        departure_reward = (num_departed - self.prev_departed) / len(self.env.agents)
 
         # r(a)_t
         num_arrived = sum([1 for agent in self.env.agents if agent.position is None and agent.state != TrainState.READY_TO_DEPART])
-        arrival_reward = num_arrived - self.prev_arrived
+        arrival_reward = (num_arrived - self.prev_arrived) / len(self.env.agents)
 
         # r(l)_t
         num_deadlocks = sum(obs['deadlocked'])
-        deadlock_penalty = num_deadlocks - self.prev_deadlocks
+        deadlock_penalty = (num_deadlocks - self.prev_deadlocks) / len(self.env.agents)
 
         # agent specific moving reward
         # num_moving = sum([1 for agent in self.env.agents if agent.state == TrainState.MOVING])
@@ -175,13 +175,14 @@ class LocalTestEnvWrapper(TestEnvWrapper):
         # ]
 
         progress_rewards = [
-            0.0 if obs['dist_target'][i] > 0 else 2.0  
+            10 if obs['dist_target'][i] == 0 else 0
             for i in range(len(self.env.agents))
         ]
 
         cf, cp = 0.5, 0.7
 
-        ce, ca, cd, cl = 0.0, 5.0, 1.0, 2.5
+        # ce, ca, cd, cl = 0.0, 5.0, 1.0, 2.5
+        ce, ca, cd, cl = 1.0, 5.0, 0.0, 2.5
         step_reward = (ce * env_reward + ca * arrival_reward + cd * departure_reward - cl * deadlock_penalty)
 
         if obs['curr_step'] == 0:
