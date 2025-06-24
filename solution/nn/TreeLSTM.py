@@ -50,8 +50,18 @@ class TreeLSTM(nn.Module):
         h = torch.zeros(batch_size, self.out_features, device=device)
         c = torch.zeros(batch_size, self.out_features, device=device)
 
+        # print("**********DEBUG**********")
+        # print("forest TreeLSTM: ", forest.shape)
+        # print("adjacency_list TreeLSTM: ", adjacency_list.shape)
+        # print("node_order TreeLSTM: ", node_order.shape)
+        # print("edge_order TreeLSTM: ", edge_order.shape)
+
+        # print("adj max index: ", adjacency.max())
+        # print("h.shape: ", h.shape)
+        # print("**********DEBUG**********")
+
         # populate the h and c states respecting computation order
-        for n in range(node_order.max() + 1):
+        for n in range(int(node_order.max()) + 1):
             self._run_lstm(n, h, c, forest, node_order, adjacency_list, edge_order)
         return h
 
