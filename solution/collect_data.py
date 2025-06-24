@@ -18,15 +18,16 @@ from plfActor import Actor
 from utils import VideoWriter, debug_show
 
 import os
+import copy
 import math
 
 collect_data_path = ""
 MAX_TIMESTEPS = 5000
-NUM_EPISODES = 10
+NUM_EPISODES = 100
 
 def create_random_env():
     return RailEnv(
-        number_of_agents=50,
+        number_of_agents=10,
         width=30,
         height=35,
         rail_generator=SparseRailGen(
@@ -122,6 +123,7 @@ if __name__ == "__main__":
 
     # initialize data storage
     all_offline_data = []
+    # episode_data = []
 
     for episode in range(args.episodes):
         print(f"Episode {episode + 1}/{args.episodes}")
@@ -134,13 +136,18 @@ if __name__ == "__main__":
             va = env_wrapper.get_valid_actions()
             action = actor.get_actions(obs, va, n_agents)
             next_obs, all_rewards, done, step_rewards = env_wrapper.step(action)
-
+            done_dict = done.copy()
+            # obs_data = obs.deepcopy()
+            # all_rewards_data = all_rewards.copy()
+            # next_obs_data = next_obs.deepcopy()
+            
+            # print(f"RAW DATA | Episode {episode+1} | Step {step_count} done:", done) 
             episode_data.append((
-                obs,
+                copy.deepcopy(obs),
                 action,
-                step_rewards,
-                next_obs,
-                done,
+                copy.deepcopy(all_rewards),
+                copy.deepcopy(next_obs),
+                done_dict,
             ))
             obs = next_obs
 
@@ -159,10 +166,19 @@ if __name__ == "__main__":
                 break
         
         all_offline_data.extend(episode_data)
+
+        # for d in episode_data:
+        #     print(f"COLLECTED | done:", d[4]) 
+
+    # print("--------------done-----------------")
+    # for d in all_offline_data:
+    #     print(d[4])
+    # print("-----------------------------------")
     
-    save_path = "offlineData/offline_rl_data_treeLSTM.pkl"
+    save_path = "offlineData/offline_rl_data_treeLSTM_10_agents.pkl"
     with open(save_path, "wb") as f:
         pickle.dump(all_offline_data, f)
+        # pickle.dump(episode_data, f)
     print("Offline RL data is saved at ", save_path)
 
     # # start step loop
