@@ -1,30 +1,9 @@
-import argparse
-import os
-import time
-
-from flatland.envs.line_generators import SparseLineGen
-from flatland.envs.malfunction_generators import (
-    MalfunctionParameters,
-    ParamMalfunctionGen,
-)
-from flatland.envs.persistence import RailEnvPersister
-from flatland.envs.rail_env import RailEnv
-from flatland.envs.rail_generators import SparseRailGen
-from flatland_cutils import TreeObsForRailEnv as TreeCutils
-
 import numpy as np
 import torch
 import torch.nn.functional as F
-from torch.optim import Adam
 
-from eval_env import LocalTestEnvWrapper
-from cqlActor import Actor
 from nn.net_newCQL import CQLNetwork
-from replayBuffer import ReplayBuffer
-from trainCQL import CQLTrainer
 import copy
-
-
 
 class MultiAgentDiscreteCQL:
     def __init__(

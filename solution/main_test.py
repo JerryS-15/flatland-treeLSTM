@@ -72,13 +72,13 @@ def train_CQL(replay_buffer, data_file, num_actions, args, parameters):
         np.save(f"./results/CQL_10", evaluations)
         
 
-        # wandb.log({
-        #     "CQL/total_loss": avg_metrics["total_loss"],
-        #     "CQL/q_loss": avg_metrics["q_loss"],
-        #     "CQL/cql_penalty": avg_metrics["cql_penalty"],
-        #     "CQL/q_values_mean": avg_metrics["q_values_mean"],
-        #     "CQL/target_q_mean": avg_metrics["target_q_mean"]
-        # }, step=training_iters)
+        wandb.log({
+            "CQL/total_loss": avg_metrics["total_loss"],
+            "CQL/q_loss": avg_metrics["q_loss"],
+            "CQL/cql_penalty": avg_metrics["cql_penalty"],
+            "CQL/q_values_mean": avg_metrics["q_mean"],
+            "CQL/target_q_mean": avg_metrics["target_q_mean"]
+        }, step=training_iters)
 
         print(f"[CQL] Iteration: {training_iters} | Total Loss: {avg_metrics['total_loss']:.3f}")
 
@@ -145,6 +145,9 @@ def eval_policy(model_path, env_params, seed, eval_episodes=10):
         arrival_ratios.append(arrival_ratio)
 
         print(f"[Eval Episode {ep+1}] Total Reward: {total_reward}, Normalized Reward: {norm_reward:.4f}, Arrival Ratio: {arrival_ratio*100:.2f}%")
+        wandb.log({"Total Reward": total_reward, "Evaluation Episodes": ep+1})
+        wandb.log({"Normalized Reward": norm_reward, "Evaluation Episodes": ep+1})
+        wandb.log({"Arrival Ratio %": arrival_ratio*100, "Evaluation Episodes": ep+1})
     
     avg_total_reward = np.mean(total_rewards)
     avg_norm_reward = np.mean(norm_rewards)
@@ -156,6 +159,9 @@ def eval_policy(model_path, env_params, seed, eval_episodes=10):
     print(f"  Avg Normalized Reward: {avg_norm_reward:.4f}")
     print(f"  Avg Arrival Ratio: {avg_arrival_ratio*100:.2f}%")
     print("---------------------------------------")
+    wandb.log({"Avg Total Reward": avg_total_reward, "Evaluation Episodes": eval_episodes})
+    wandb.log({"Avg Norm Reward": avg_norm_reward, "Evaluation Episodes": eval_episodes})
+    wandb.log({"Avg Arrival Ratio %": avg_arrival_ratio*100, "Evaluation Episodes": eval_episodes})
 
     return avg_norm_reward
 
@@ -204,6 +210,13 @@ if __name__ == "__main__":
         os.makedirs("./results")
 
     parameters = flatland_parameters
+
+    print("Starting wandb, view at https://wandb.ai/")
+    wandb.init(
+		project='flatland-TreeLSTM', 
+		name=f"CQL_{parameters['number_of_agents']}agents_seed{args.seed}_{time.strftime('%m%d%H%M%S')}",
+		config=parameters
+	)
 
     num_actions = 5
     data_file = "offlineData/offline_rl_data_treeLSTM_10_agents.pkl"
