@@ -19,7 +19,7 @@ from utils import VideoWriter, debug_show
 
 def create_random_env():
     return RailEnv(
-        number_of_agents=50,
+        number_of_agents=10,
         width=30,
         height=35,
         rail_generator=SparseRailGen(
@@ -114,7 +114,10 @@ if __name__ == "__main__":
         obs, all_rewards, done, step_rewards = env_wrapper.step(action)
 
         # print(f"Step {obs[0]['curr_step']}: ")
-        # print(step_rewards)
+        # print("agent_attr[0]: ", obs[0]['agent_attr'][0])
+        # print("node_order[0]: ", obs[0]['node_order'][0])
+        # print("edge_order[0]: ", obs[0]['edge_order'][0])
+        # print(done)
 
         if args.render:
             debug_show(env_wrapper.env)
