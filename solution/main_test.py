@@ -170,7 +170,7 @@ if __name__ == "__main__":
 
     flatland_parameters = {
 		# Evaluation
-		"eval_freq": 5e1,  #5e4
+		"eval_freq": 5e3,  #5e4
 		# "eval_eps": 1e-3,
 		# Learning
 		# "discount": 0.99,
