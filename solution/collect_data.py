@@ -21,15 +21,18 @@ import os
 import copy
 import math
 
-collect_data_path = ""
-MAX_TIMESTEPS = 5000
+N_AGENTS = 5
+WIDTH = 30
+HEIGHT = 35
+collect_data_path = f"offlineData/offline_rl_data_treeLSTM_{N_AGENTS}_agents.pkl"
 NUM_EPISODES = 100
+MAX_TIMESTEPS = 5000
 
 def create_random_env():
     return RailEnv(
-        number_of_agents=10,
-        width=30,
-        height=35,
+        number_of_agents=N_AGENTS,
+        width=WIDTH,
+        height=HEIGHT,
         rail_generator=SparseRailGen(
             max_num_cities=3,
             grid_mode=False,
@@ -86,6 +89,7 @@ def get_args():
     )
     parser.add_argument("--save-video", "-s", default=None, help="path to save video")
     parser.add_argument("--episodes", type=int, default=NUM_EPISODES, help="number of episodes when collecting data")
+    # parser.add_argument("--n_agents", type=int, default=10, help="number of agents in the environment")
     args = parser.parse_args()
     return args
 
@@ -116,6 +120,8 @@ if __name__ == "__main__":
         model_path = args.model
     actor = Actor(model_path)
     print(f"Load actor from {model_path}")
+
+    save_path = collect_data_path
 
     # create video writer
     if args.save_video is not None:
@@ -175,7 +181,6 @@ if __name__ == "__main__":
     #     print(d[4])
     # print("-----------------------------------")
     
-    save_path = "offlineData/offline_rl_data_treeLSTM_10_agents.pkl"
     with open(save_path, "wb") as f:
         pickle.dump(all_offline_data, f)
         # pickle.dump(episode_data, f)
