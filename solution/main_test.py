@@ -34,8 +34,9 @@ from replayBuffer import ReplayBuffer
 def train_CQL(replay_buffer, data_file, num_actions, args, parameters):
     # setting = f"{args.env}_{args.seed}"
     # buffer_name = f"{args.buffer_name}_{setting}"
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    policy_name = "cql_10"
+    device = torch.device("cuda:5" if torch.cuda.is_available() else "cpu:5")
+    print(f"Using device: {device}")
+    policy_name = "cql-10-agents"
     policy_path = f"./policy/{policy_name}"
 
     policy = discrete_CQL.MultiAgentDiscreteCQL(
@@ -67,9 +68,9 @@ def train_CQL(replay_buffer, data_file, num_actions, args, parameters):
         }
 
         policy.save(policy_path)
-        model_path = f"{policy_path}_model.pt"
-        evaluations.append(eval_policy(model_path, parameters, args.seed))
-        np.save(f"./results/CQL_10", evaluations)
+        # model_path = f"{policy_path}_model.pt"
+        evaluations.append(eval_policy(policy_path, parameters, args.seed))
+        np.save(f"./results/CQL-10-agents", evaluations)
         
 
         wandb.log({
@@ -84,7 +85,7 @@ def train_CQL(replay_buffer, data_file, num_actions, args, parameters):
 
         training_iters += int(parameters["eval_freq"])
 
-    policy.save(f"./models/cql_10.pt")
+    policy.save(policy_path)
 
 
 def eval_policy(model_path, env_params, seed, eval_episodes=10):
@@ -170,7 +171,7 @@ if __name__ == "__main__":
 
     flatland_parameters = {
 		# Evaluation
-		"eval_freq": 5e4,  #5e4
+		"eval_freq": 1e4,  #5e4
 		# "eval_eps": 1e-3,
 		# Learning
 		# "discount": 0.99,
@@ -196,7 +197,7 @@ if __name__ == "__main__":
 	}
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--max_timesteps", default=1e6, type=int)
+    parser.add_argument("--max_timesteps", default=1e5, type=int)  # 1e6
     parser.add_argument("--CQL_alpha", default=1.0, type=float, help="Regularization strength for CQL")
     parser.add_argument("--seed", default=0, type=int)
 
