@@ -58,7 +58,7 @@ def train_CQL(replay_buffer, data_file, num_actions, args, parameters):
             batch = replay_buffer.sample(parameters["batch_size"])
             metrics = policy.train(batch)
             epoch_metrics.append(metrics)
-            if ep % 100 == 0:
+            if ep % 1000 == 0:
                 tqdm.write(f"Epoch {ep}, Loss: {metrics['total_loss']:.4f}, Q_Loss: {metrics['q_loss']:.4f}")
 
         avg_metrics = {
@@ -170,12 +170,12 @@ if __name__ == "__main__":
 
     flatland_parameters = {
 		# Evaluation
-		"eval_freq": 5e3,  #5e4
+		"eval_freq": 5e4,  #5e4
 		# "eval_eps": 1e-3,
 		# Learning
 		# "discount": 0.99,
 		# "buffer_size": 1e6,
-		"batch_size": 128,   # 32 -> 64 -> 128
+		"batch_size": 256,   # 32 -> 64 -> 128
 		# "optimizer": "Adam",
 		# "optimizer_parameters": {
 		# 	"lr": 1e-4,   # 0.0000625
