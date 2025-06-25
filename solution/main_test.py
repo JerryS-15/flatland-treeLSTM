@@ -68,8 +68,8 @@ def train_CQL(replay_buffer, data_file, num_actions, args, parameters):
         }
 
         policy.save(policy_path)
-        # model_path = f"{policy_path}_model.pt"
-        evaluations.append(eval_policy(policy_path, parameters, args.seed))
+        model_path = f"{policy_path}_model.pt"
+        evaluations.append(eval_policy(model_path, parameters, args.seed))
         np.save(f"./results/CQL-10-agents", evaluations)
         
 
