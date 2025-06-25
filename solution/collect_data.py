@@ -19,12 +19,12 @@ from utils import VideoWriter, debug_show
 
 import os
 import copy
-import math
+import pandas as pd
 
 N_AGENTS = 5
 WIDTH = 30
 HEIGHT = 35
-collect_data_path = f"offlineData/offline_rl_data_treeLSTM_{N_AGENTS}_agents.pkl"
+collect_data_path_name = f"offline_rl_data_treeLSTM_{N_AGENTS}_agents"
 NUM_EPISODES = 100
 MAX_TIMESTEPS = 5000
 
@@ -121,7 +121,7 @@ if __name__ == "__main__":
     actor = Actor(model_path)
     print(f"Load actor from {model_path}")
 
-    save_path = collect_data_path
+    save_path = f"offlineData/{collect_data_path_name}.pkl"
 
     # create video writer
     if args.save_video is not None:
@@ -129,13 +129,14 @@ if __name__ == "__main__":
 
     # initialize data storage
     all_offline_data = []
-    # episode_data = []
+    dataset_info = []
 
     for episode in range(args.episodes):
         print(f"Episode {episode + 1}/{args.episodes}")
         obs = env_wrapper.reset()
         step_count = 0
         episode_data = []
+        info_data = []
 
         while step_count < MAX_TIMESTEPS:
             step_count += 1
@@ -168,10 +169,18 @@ if __name__ == "__main__":
             if done["__all__"]:
                 arrival_ratio, total_reward, norm_reward = env_wrapper.final_metric()
                 print(f"TOTAL_REW: {total_reward}, NORM_REW: {norm_reward:.4f}, ARR_RATIO: {arrival_ratio*100:.2f}%, with {len(episode_data)} samples.")
+                info_data.append((
+                    episode,
+                    total_reward,
+                    norm_reward,
+                    arrival_ratio*100,
+                    len(episode_data)
+                ))
 
                 break
         
         all_offline_data.extend(episode_data)
+        dataset_info.extend(info_data)
 
         # for d in episode_data:
         #     print(f"COLLECTED | done:", d[4]) 
@@ -185,6 +194,13 @@ if __name__ == "__main__":
         pickle.dump(all_offline_data, f)
         # pickle.dump(episode_data, f)
     print("Offline RL data is saved at ", save_path)
+
+    dataset_info_path = f"offlineData/INFO-{collect_data_path_name}.csv"
+    df_info = pd.DataFrame(dataset_info, columns=[
+        "episode", "total_reward", "norm_reward", "arrival_ratio", "num_samples_per_episode"
+    ])  
+    df_info.to_csv(dataset_info_path, index=False)
+    print("Dataset INFO documented at ", dataset_info_path)
 
     # # start step loop
     # obs = env_wrapper.reset()
