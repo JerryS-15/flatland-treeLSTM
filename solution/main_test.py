@@ -36,7 +36,7 @@ def train_CQL(replay_buffer, data_file, num_actions, args, parameters):
     # buffer_name = f"{args.buffer_name}_{setting}"
     device = torch.device("cuda:5" if torch.cuda.is_available() else "cpu:5")
     print(f"Using device: {device}")
-    policy_name = "cql-10-agents"
+    policy_name = f"cql-{parameters['number_of_agents']}-agents"
     policy_path = f"./policy/{policy_name}"
 
     policy = discrete_CQL.MultiAgentDiscreteCQL(
@@ -70,7 +70,7 @@ def train_CQL(replay_buffer, data_file, num_actions, args, parameters):
         policy.save(policy_path)
         model_path = f"{policy_path}_model.pt"
         evaluations.append(eval_policy(model_path, parameters, args.seed))
-        np.save(f"./results/CQL-10-agents", evaluations)
+        np.save(f"./results/CQL-{parameters['number_of_agents']}-agents", evaluations)
         
 
         wandb.log({
@@ -176,14 +176,14 @@ if __name__ == "__main__":
 		# Learning
 		# "discount": 0.99,
 		# "buffer_size": 1e6,
-		"batch_size": 256,   # 32 -> 64 -> 128
+		"batch_size": 128,   # 32 -> 64 -> 128
 		# "optimizer": "Adam",
 		# "optimizer_parameters": {
 		# 	"lr": 1e-4,   # 0.0000625
 		# 	"eps": 0.00015
 		# },
 		# Flatland Env
-        "number_of_agents": 10,
+        "number_of_agents": 5,
         "width": 30,
         "height": 35,
         "max_num_cities": 3,
@@ -220,7 +220,7 @@ if __name__ == "__main__":
 	)
 
     num_actions = 5
-    data_file = "offlineData/offline_rl_data_treeLSTM_10_agents.pkl"
+    data_file = f"offlineData/offline_rl_data_treeLSTM_{parameters['number_of_agents']}_agents.pkl"
     replay_buffer = ReplayBuffer()
 
     train_CQL(replay_buffer, data_file, num_actions, args, parameters)
