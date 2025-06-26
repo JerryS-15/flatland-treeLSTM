@@ -24,9 +24,9 @@ import pandas as pd
 N_AGENTS = 5
 WIDTH = 30
 HEIGHT = 35
-collect_data_path_name = f"offline_rl_data_treeLSTM_{N_AGENTS}_agents"
-NUM_EPISODES = 100
+NUM_EPISODES = 1000
 MAX_TIMESTEPS = 5000
+collect_data_path_name = f"offline_rl_data_treeLSTM_{N_AGENTS}_agents_{NUM_EPISODES}_episodes"
 
 def create_random_env():
     return RailEnv(

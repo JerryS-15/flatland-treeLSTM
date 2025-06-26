@@ -200,6 +200,7 @@ if __name__ == "__main__":
     parser.add_argument("--max_timesteps", default=1e5, type=int)  # 1e6
     parser.add_argument("--CQL_alpha", default=1.0, type=float, help="Regularization strength for CQL")
     parser.add_argument("--seed", default=0, type=int)
+    parser.add_argument("--data_n_eps", default=1000, type=int, help="Number of episodes that dataset have")
 
     args = parser.parse_args()
 
@@ -220,7 +221,7 @@ if __name__ == "__main__":
 	)
 
     num_actions = 5
-    data_file = f"offlineData/offline_rl_data_treeLSTM_{parameters['number_of_agents']}_agents.pkl"
+    data_file = f"offlineData/offline_rl_data_treeLSTM_{parameters['number_of_agents']}_agents_{args.data_n_eps}_episodes.pkl"
     replay_buffer = ReplayBuffer()
 
     train_CQL(replay_buffer, data_file, num_actions, args, parameters)
