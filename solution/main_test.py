@@ -36,7 +36,7 @@ def train_CQL(replay_buffer, data_file, num_actions, args, parameters):
     # buffer_name = f"{args.buffer_name}_{setting}"
     device = torch.device("cuda:5" if torch.cuda.is_available() else "cpu:5")
     print(f"Using device: {device}")
-    policy_name = f"cql-{parameters['number_of_agents']}-agents"
+    policy_name = f"cql-{parameters['number_of_agents']}-agents-1000eps"
     policy_path = f"./policy/{policy_name}"
 
     policy = discrete_CQL.MultiAgentDiscreteCQL(
@@ -70,7 +70,7 @@ def train_CQL(replay_buffer, data_file, num_actions, args, parameters):
         policy.save(policy_path)
         model_path = f"{policy_path}_model.pt"
         evaluations.append(eval_policy(model_path, parameters, args.seed))
-        np.save(f"./results/CQL-{parameters['number_of_agents']}-agents", evaluations)
+        np.save(f"./results/{policy_name}", evaluations)
         
 
         wandb.log({
@@ -197,7 +197,7 @@ if __name__ == "__main__":
 	}
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--max_timesteps", default=1e5, type=int)  # 1e6
+    parser.add_argument("--max_timesteps", default=1e6, type=int)  # 1e6
     parser.add_argument("--CQL_alpha", default=1.0, type=float, help="Regularization strength for CQL")
     parser.add_argument("--seed", default=0, type=int)
     parser.add_argument("--data_n_eps", default=1000, type=int, help="Number of episodes that dataset have")
