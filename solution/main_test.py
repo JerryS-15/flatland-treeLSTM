@@ -3,13 +3,12 @@ import copy
 import importlib
 import json
 import os
+from time import sleep
 
 import numpy as np
 import torch
 
-# import discrete_BCQ
 import discrete_CQL
-# import DQN
 import utils
 import wandb
 import time
@@ -29,6 +28,7 @@ from eval_env import LocalTestEnvWrapper
 from impl_config import FeatureParserConfig as fp
 from cqlActor import Actor
 from replayBuffer import ReplayBuffer
+from utils import debug_show
 
 
 def train_CQL(replay_buffer, data_file, num_actions, args, parameters):
@@ -36,7 +36,7 @@ def train_CQL(replay_buffer, data_file, num_actions, args, parameters):
     # buffer_name = f"{args.buffer_name}_{setting}"
     device = torch.device("cuda:5" if torch.cuda.is_available() else "cpu:5")
     print(f"Using device: {device}")
-    policy_name = f"cql-{parameters['number_of_agents']}-agents-1000eps"
+    policy_name = f"cql-{parameters['number_of_agents']}-agents-1000eps-bs256"
     policy_path = f"./policy/{policy_name}"
 
     policy = discrete_CQL.MultiAgentDiscreteCQL(
@@ -134,6 +134,15 @@ def eval_policy(model_path, env_params, seed, eval_episodes=10):
         done = {"__all__": False}
         ep_reward = 0
 
+        # """ DEBUG: Check if same environment generated every time """
+        # debug_show(env_wrapper.env)
+        # sleep(1 / 30)
+
+        # print(f"Eval Episode {ep+1}:")
+        # for i, agent in enumerate(eval_env.agents):
+        #     print(f"Agent {i}: initial={agent.initial_position}, target={agent.target}")
+        # """ DEBUG END """
+
         while not done["__all__"]:
             valid_actions = env_wrapper.get_valid_actions()
             actions = actor.get_actions(obs, valid_actions, n_agents)
@@ -176,7 +185,7 @@ if __name__ == "__main__":
 		# Learning
 		# "discount": 0.99,
 		# "buffer_size": 1e6,
-		"batch_size": 128,   # 32 -> 64 -> 128
+		"batch_size": 256,   # 32 -> 64 -> 128
 		# "optimizer": "Adam",
 		# "optimizer_parameters": {
 		# 	"lr": 1e-4,   # 0.0000625
@@ -222,6 +231,7 @@ if __name__ == "__main__":
 
     num_actions = 5
     data_file = f"offlineData/offline_rl_data_treeLSTM_{parameters['number_of_agents']}_agents_{args.data_n_eps}_episodes.pkl"
+    # data_file = f"offlineData/offline_rl_data_treeLSTM_{parameters['number_of_agents']}_agents.pkl"
     replay_buffer = ReplayBuffer()
 
     train_CQL(replay_buffer, data_file, num_actions, args, parameters)
