@@ -36,7 +36,7 @@ def train_CQL(replay_buffer, data_file, num_actions, args, parameters):
     # buffer_name = f"{args.buffer_name}_{setting}"
     device = torch.device("cuda:5" if torch.cuda.is_available() else "cpu:5")
     print(f"Using device: {device}")
-    policy_name = f"cql-{parameters['number_of_agents']}-agents-1000eps-bs256"
+    policy_name = f"cql-{parameters['number_of_agents']}-agents-1000eps-bs64"
     policy_path = f"./policy/{policy_name}"
 
     policy = discrete_CQL.MultiAgentDiscreteCQL(
@@ -185,7 +185,7 @@ if __name__ == "__main__":
 		# Learning
 		# "discount": 0.99,
 		# "buffer_size": 1e6,
-		"batch_size": 256,   # 32 -> 64 -> 128
+		"batch_size": 64,   # default setting - 128
 		# "optimizer": "Adam",
 		# "optimizer_parameters": {
 		# 	"lr": 1e-4,   # 0.0000625
