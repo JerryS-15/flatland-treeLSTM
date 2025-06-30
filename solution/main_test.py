@@ -185,7 +185,7 @@ if __name__ == "__main__":
 		# Learning
 		# "discount": 0.99,
 		# "buffer_size": 1e6,
-		"batch_size": 64,   # default setting - 128
+		"batch_size": 128,   # default setting - 128
 		# "optimizer": "Adam",
 		# "optimizer_parameters": {
 		# 	"lr": 1e-4,   # 0.0000625
@@ -209,7 +209,7 @@ if __name__ == "__main__":
     parser.add_argument("--max_timesteps", default=1e6, type=int)  # 1e6
     parser.add_argument("--CQL_alpha", default=1.0, type=float, help="Regularization strength for CQL")
     parser.add_argument("--seed", default=0, type=int)
-    parser.add_argument("--data_n_eps", default=1000, type=int, help="Number of episodes that dataset have")
+    parser.add_argument("--data_n_eps", default=2000, type=int, help="Number of episodes that dataset have")
 
     args = parser.parse_args()
 
