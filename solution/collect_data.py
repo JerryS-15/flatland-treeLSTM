@@ -23,10 +23,10 @@ import os
 import copy
 import pandas as pd
 
-N_AGENTS = 5
+N_AGENTS = 10
 WIDTH = 30
 HEIGHT = 35
-NUM_EPISODES = 5
+NUM_EPISODES = 1000
 MAX_TIMESTEPS = 5000
 collect_data_path_name = f"offline_rl_data_treeLSTM_{N_AGENTS}_agents_{NUM_EPISODES}_episodes"
 
