@@ -36,7 +36,7 @@ def train_CQL(replay_buffer, data_file, num_actions, args, parameters):
     # buffer_name = f"{args.buffer_name}_{setting}"
     device = torch.device("cuda:5" if torch.cuda.is_available() else "cpu:5")
     print(f"Using device: {device}")
-    policy_name = f"cql-{parameters['number_of_agents']}-agents-1000eps-bs64"
+    policy_name = f"cql-{parameters['number_of_agents']}-agents-{args.data_n_eps}eps-bs{parameters['batch_size']}"
     policy_path = f"./policy/{policy_name}"
 
     policy = discrete_CQL.MultiAgentDiscreteCQL(
@@ -213,14 +213,23 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    parameters = flatland_parameters
+
+    num_actions = 5
+    data_file = f"offlineData/offline_rl_data_treeLSTM_{parameters['number_of_agents']}_agents_{args.data_n_eps}_episodes.pkl"
+    # data_file = f"offlineData/offline_rl_data_treeLSTM_{parameters['number_of_agents']}_agents.pkl"
+
     print("---------------------------------------")
     print("Start CQL training for flatland TreeLSTM.")
+    print("Training Details:")
+    print(f"Batch Size: {parameters['batch_size']}")
+    print(f"Number of agents: {parameters['number_of_agents']}")
+    print(f"Dataset episodes: {args.data_n_eps}")
+    print(f"Dataset file: {data_file}")
     print("---------------------------------------")
 
     if not os.path.exists("./results"):
         os.makedirs("./results")
-
-    parameters = flatland_parameters
 
     print("Starting wandb, view at https://wandb.ai/")
     wandb.init(
@@ -229,9 +238,6 @@ if __name__ == "__main__":
 		config=parameters
 	)
 
-    num_actions = 5
-    data_file = f"offlineData/offline_rl_data_treeLSTM_{parameters['number_of_agents']}_agents_{args.data_n_eps}_episodes.pkl"
-    # data_file = f"offlineData/offline_rl_data_treeLSTM_{parameters['number_of_agents']}_agents.pkl"
     replay_buffer = ReplayBuffer()
 
     train_CQL(replay_buffer, data_file, num_actions, args, parameters)
