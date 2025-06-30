@@ -1,6 +1,8 @@
 import pickle
 from argparse import ArgumentParser
 from time import sleep
+import wandb
+import time
 
 from flatland.envs.line_generators import SparseLineGen
 from flatland.envs.malfunction_generators import (
@@ -21,10 +23,10 @@ import os
 import copy
 import pandas as pd
 
-N_AGENTS = 10
+N_AGENTS = 5
 WIDTH = 30
 HEIGHT = 35
-NUM_EPISODES = 1000
+NUM_EPISODES = 5
 MAX_TIMESTEPS = 5000
 collect_data_path_name = f"offline_rl_data_treeLSTM_{N_AGENTS}_agents_{NUM_EPISODES}_episodes"
 
@@ -104,6 +106,12 @@ if __name__ == "__main__":
     if not os.path.exists("./offlineData"):
         os.makedirs("./offlineData")
 
+    print("Starting wandb, view at https://wandb.ai/")
+    wandb.init(
+		project='flatland-TreeLSTM', 
+		name=f"DATASET_{N_AGENTS}agents_{NUM_EPISODES}eps_{time.strftime('%m%d%H%M%S')}"
+	)
+
     # create env
     if args.env is None:
         env = create_random_env()
@@ -176,6 +184,11 @@ if __name__ == "__main__":
                     arrival_ratio*100,
                     len(episode_data)
                 ))
+
+                wandb.log({"Total Reward": total_reward, "Episode": episode+1})
+                wandb.log({"Normalized Reward": norm_reward, "Episode": episode+1})
+                wandb.log({"Arrival Ratio %": arrival_ratio*100, "Episode": episode+1})
+                wandb.log({"Number of Samples": len(episode_data), "Episode": episode+1})
 
                 break
         
