@@ -49,7 +49,7 @@ class CQLNetwork(nn.Module):
             nn.GELU(),
             nn.Linear(2 * ns.hidden_sz, ns.hidden_sz),
             nn.GELU(),
-            nn.Linear(ns.hidden_sz, fp.action_sz)  # <== 输出 Q(s, a) for all a
+            nn.Linear(ns.hidden_sz, fp.action_sz)  # <== Output Q(s, a) for all a
         )
 
     def forward(self, agents_attr, forest, adjacency, node_order, edge_order):
