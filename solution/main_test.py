@@ -8,7 +8,6 @@ from time import sleep
 import numpy as np
 import torch
 
-import discrete_CQL
 import utils
 import wandb
 import time
@@ -30,6 +29,8 @@ from cqlActor import Actor
 from replayBuffer import ReplayBuffer
 from utils import debug_show
 
+import discrete_CQL
+import discrete_globalCQL
 
 def train_CQL(replay_buffer, data_file, num_actions, args, parameters):
     # setting = f"{args.env}_{args.seed}"
@@ -87,10 +88,65 @@ def train_CQL(replay_buffer, data_file, num_actions, args, parameters):
 
     policy.save(policy_path)
 
+def train_globalCQL(replay_buffer, data_file, num_actions, args, parameters):
+
+    device = torch.device("cuda:5" if torch.cuda.is_available() else "cpu:5")
+    print(f"Using device: {device}")
+    policy_name = f"cql-A2C-{parameters['number_of_agents']}-agents-{args.data_n_eps}eps-bs{parameters['batch_size']}"
+    policy_path = f"./policy/{policy_name}"
+
+    policy = discrete_globalCQL.MultiAgentGlobalDiscreteCQL(
+        num_actions,
+        device=device
+    )
+
+    replay_buffer.load_from_file(data_file)
+    print(f"Loaded {len(replay_buffer.buffer)} transitions.")
+	
+    evaluations = []
+    training_iters = 0
+
+    print("A2C-CQL Training started.")
+
+    while training_iters < args.max_timesteps:
+        epoch_metrics = []
+        for ep in tqdm(range(int(parameters["eval_freq"])), desc="A2C-CQL Training Progress"):
+        # for _ in range(int(parameters["eval_freq"])):
+            batch = replay_buffer.sample(parameters["batch_size"])
+            metrics = policy.train(batch)
+            epoch_metrics.append(metrics)
+            if ep % 1000 == 0:
+                tqdm.write(f"Epoch {ep}, Loss: {metrics['total_loss']:.4f}, Q_Loss: {metrics['q_loss']:.4f}")
+
+        avg_metrics = {
+            k: np.mean([m[k] for m in epoch_metrics])
+            for k in epoch_metrics[0].keys()
+        }
+
+        policy.save(policy_path)
+        model_path = f"{policy_path}_model.pt"
+        evaluations.append(eval_policy(model_path, parameters, args.seed))
+        np.save(f"./results/{policy_name}", evaluations)
+        
+
+        wandb.log({
+            "A2C-CQL/critic_loss": avg_metrics["critic_loss"],
+            "A2C-CQL/actor_loss": avg_metrics["actor_loss"],
+            "A2C-CQL/cql_penalty": avg_metrics["cql_penalty"],
+            "A2C-CQL/q_values_mean": avg_metrics["q_mean"],
+            "A2C-CQL/target_q_mean": avg_metrics["target_q_mean"]
+        }, step=training_iters)
+
+        print(f"[A2C-CQL] Iteration: {training_iters} | Total Loss: {avg_metrics['total_loss']:.3f}")
+
+        training_iters += int(parameters["eval_freq"])
+
+    policy.save(policy_path)
+
 
 def eval_policy(model_path, env_params, seed, eval_episodes=10):
     """
-    model: trained BC
+    model_path:
     env_params: 
     seed: 
     eval_episodes: number of episodes for evaluation
@@ -211,6 +267,8 @@ if __name__ == "__main__":
     parser.add_argument("--CQL_alpha", default=1.0, type=float, help="Regularization strength for CQL")
     parser.add_argument("--seed", default=0, type=int)
     parser.add_argument("--data_n_eps", default=2000, type=int, help="Number of episodes that dataset have")
+    parser.add_argument("--cql", action="store_true", help="Train with Conservative Q-Learning")
+    parser.add_argument("--cqlG", action="store_true", help="Train with Global Conservative Q-Learning based on A2C")
 
     args = parser.parse_args()
 
@@ -221,7 +279,12 @@ if __name__ == "__main__":
     # data_file = f"offlineData/offline_rl_data_treeLSTM_{parameters['number_of_agents']}_agents.pkl"
 
     print("---------------------------------------")
-    print("Start CQL training for flatland TreeLSTM.")
+    if args.cqlG:
+        print("Start Global-CQL training for flatland TreeLSTM.")
+        mode = "cqlGlobal"
+    else:
+        print("Start CQL training for flatland TreeLSTM.")
+        mode = "CQL"
     print("Training Details:")
     print(f"Batch Size: {parameters['batch_size']}")
     print(f"Number of agents: {parameters['number_of_agents']}")
@@ -235,11 +298,14 @@ if __name__ == "__main__":
     print("Starting wandb, view at https://wandb.ai/")
     wandb.init(
 		project='flatland-TreeLSTM', 
-		name=f"CQL_{parameters['number_of_agents']}agents_seed{args.seed}_{time.strftime('%m%d%H%M%S')}",
+		name=f"{mode}_{parameters['number_of_agents']}agents_seed{args.seed}_{time.strftime('%m%d%H%M%S')}",
 		config=parameters
 	)
 
     replay_buffer = ReplayBuffer()
 
-    train_CQL(replay_buffer, data_file, num_actions, args, parameters)
+    if args.cqlG:
+        train_globalCQL(replay_buffer, data_file, num_actions, args, parameters)
+    else:
+        train_CQL(replay_buffer, data_file, num_actions, args, parameters)
 
