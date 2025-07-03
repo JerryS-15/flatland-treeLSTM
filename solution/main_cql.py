@@ -26,6 +26,7 @@ from flatland_cutils import TreeObsForRailEnv as TreeCutils
 from eval_env import LocalTestEnvWrapper
 from impl_config import FeatureParserConfig as fp
 from cqlActor import Actor
+from cqlGlobalActor import GlobalActor
 from replayBuffer import ReplayBuffer
 from utils import debug_show
 
@@ -89,7 +90,7 @@ def train_CQL(replay_buffer, data_file, num_actions, args, parameters):
     policy.save(policy_path)
 
 def train_globalCQL(replay_buffer, data_file, num_actions, args, parameters):
-
+    isGlobal = True
     device = torch.device("cuda:5" if torch.cuda.is_available() else "cpu:5")
     print(f"Using device: {device}")
     policy_name = f"cql-A2C-{parameters['number_of_agents']}-agents-{args.data_n_eps}eps-bs{parameters['batch_size']}"
@@ -124,8 +125,8 @@ def train_globalCQL(replay_buffer, data_file, num_actions, args, parameters):
         }
 
         policy.save(policy_path)
-        model_path = f"{policy_path}_model.pt"
-        evaluations.append(eval_policy(model_path, parameters, args.seed))
+        model_path = f"{policy_path}_global_model.pt"
+        evaluations.append(eval_policy(model_path, parameters, args.seed, isGlobal=isGlobal))
         np.save(f"./results/{policy_name}", evaluations)
         
 
@@ -144,7 +145,7 @@ def train_globalCQL(replay_buffer, data_file, num_actions, args, parameters):
     policy.save(policy_path)
 
 
-def eval_policy(model_path, env_params, seed, eval_episodes=10):
+def eval_policy(model_path, env_params, seed, eval_episodes=10, isGlobal=False):
     """
     model_path:
     env_params: 
@@ -178,7 +179,10 @@ def eval_policy(model_path, env_params, seed, eval_episodes=10):
     env_wrapper = LocalTestEnvWrapper(eval_env)
     n_agents = env_wrapper.env.number_of_agents
 
-    actor = Actor(model_path)
+    if isGlobal:
+        actor = GlobalActor(model_path)
+    else:
+        actor = Actor(model_path)
     print(f"Evaluating using actor from {model_path}")
 
     total_rewards = []
@@ -237,12 +241,12 @@ if __name__ == "__main__":
 
     flatland_parameters = {
 		# Evaluation
-		"eval_freq": 1e4,  #5e4
+		"eval_freq": 1e1,  #5e4
 		# "eval_eps": 1e-3,
 		# Learning
 		# "discount": 0.99,
 		# "buffer_size": 1e6,
-		"batch_size": 128,   # default setting - 128
+		"batch_size": 32,   # default setting - 128
 		# "optimizer": "Adam",
 		# "optimizer_parameters": {
 		# 	"lr": 1e-4,   # 0.0000625
@@ -266,7 +270,7 @@ if __name__ == "__main__":
     parser.add_argument("--max_timesteps", default=1e6, type=int)  # 1e6
     parser.add_argument("--CQL_alpha", default=1.0, type=float, help="Regularization strength for CQL")
     parser.add_argument("--seed", default=0, type=int)
-    parser.add_argument("--data_n_eps", default=2000, type=int, help="Number of episodes that dataset have")
+    parser.add_argument("--data_n_eps", default=1000, type=int, help="Number of episodes that dataset have")
     parser.add_argument("--cql", action="store_true", help="Train with Conservative Q-Learning")
     parser.add_argument("--cqlG", action="store_true", help="Train with Global Conservative Q-Learning based on A2C")
 

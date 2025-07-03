@@ -30,7 +30,7 @@ class Transformer(nn.Module):
 
 class CQLNetwork(nn.Module):
     def __init__(self):
-        super().__init__()
+        super(CQLNetwork, self).__init__()
         self.tree_lstm = TreeLSTM(fp.node_sz, ns.tree_embedding_sz)
         self.attr_embedding = nn.Sequential(
             nn.Linear(fp.agent_attr, 2 * ns.hidden_sz),
@@ -97,6 +97,10 @@ class CQLNetwork(nn.Module):
         q_values = self.global_q_net(q_input).squeeze(-1)  # [batch_size]
 
         return q_values
+    
+    def forward(self, agents_attr, forest, adjacency, node_order, edge_order):
+        return self.actor(agents_attr, forest, adjacency, node_order, edge_order)
+
 
     def modify_adjacency(self, adjacency, device):
         batch_size, n_agents, num_edges, _ = adjacency.shape
