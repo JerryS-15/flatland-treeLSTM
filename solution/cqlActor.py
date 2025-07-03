@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 
-from nn.net_newCQL import CQLNetwork
+from nn.net_cql import CQLNetwork
 
 
 class Actor:
