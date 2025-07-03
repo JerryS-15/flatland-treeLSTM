@@ -130,7 +130,8 @@ def eval_policy(model_path, env_params, seed, eval_episodes=10):
     arrival_ratios = []
 
     for ep in range(eval_episodes):
-        obs = env_wrapper.reset()
+        eval_seed = seed + 100 + ep*10
+        obs = env_wrapper.reset(random_seed=eval_seed)
         done = {"__all__": False}
         ep_reward = 0
 
@@ -154,7 +155,7 @@ def eval_policy(model_path, env_params, seed, eval_episodes=10):
         norm_rewards.append(norm_reward)
         arrival_ratios.append(arrival_ratio)
 
-        print(f"[Eval Episode {ep+1}] Total Reward: {total_reward}, Normalized Reward: {norm_reward:.4f}, Arrival Ratio: {arrival_ratio*100:.2f}%")
+        print(f"[Eval Episode {ep+1}] [Eval Seed {eval_seed}] Total Reward: {total_reward}, Normalized Reward: {norm_reward:.4f}, Arrival Ratio: {arrival_ratio*100:.2f}%")
         wandb.log({"Total Reward": total_reward, "Evaluation Episodes": ep+1})
         wandb.log({"Normalized Reward": norm_reward, "Evaluation Episodes": ep+1})
         wandb.log({"Arrival Ratio %": arrival_ratio*100, "Evaluation Episodes": ep+1})
