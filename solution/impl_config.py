@@ -19,6 +19,7 @@ class FeatureParserConfig:
 
     agent_attr: int = 83
 
+    n_agents: int = 5
 
 class NetworkConfig:
     hidden_sz = 128
