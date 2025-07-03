@@ -143,10 +143,12 @@ class MultiAgentGlobalDiscreteCQL:
     
     def save(self, filename):
         torch.save(self.model.state_dict(), filename + "_global_model.pt")
-        torch.save(self.optimizer.state_dict(), filename + "_global_optimizer")
+        torch.save(self.actor_optimizer.state_dict(), filename + "_global_actor_optimizer")
+        torch.save(self.critic_optimizer.state_dict(), filename + "_global_critic_optimizer")
 
     def load(self, filename):
         self.model.load_state_dict(torch.load(filename + "_global_model.pt", map_location=self.device))
         self.target_model = copy.deepcopy(self.model)
-        self.optimizer.load_state_dict(torch.load(filename + "_global_optimizer", map_location=self.device))
+        self.actor_optimizer.load_state_dict(torch.load(filename + "_global_actor_optimizer", map_location=self.device))
+        self.critic_optimizer.load_state_dict(torch.load(filename + "_global_critic_optimizer", map_location=self.device))
         
