@@ -60,7 +60,7 @@ def map_generator(env_params, seed, eval_episodes=10):
     actions = {i: 0 for i in range(n_agents)}
 
     for ep in range(eval_episodes):
-        obs = env_wrapper.reset()
+        obs = env_wrapper.reset(random_seed=seed+100+ep)
         # done = {"__all__": False}
         # ep_reward = 0
         counter = 0
@@ -73,7 +73,7 @@ def map_generator(env_params, seed, eval_episodes=10):
         for i, agent in enumerate(eval_env.agents):
             print(f"Agent {i}: initial={agent.initial_position}, target={agent.target}")
 
-        while counter < 11:
+        while counter < 71:
             counter += 1
             valid_actions = env_wrapper.get_valid_actions()
             # actions = actor.get_actions(obs, valid_actions, n_agents)

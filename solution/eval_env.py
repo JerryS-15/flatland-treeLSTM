@@ -114,8 +114,12 @@ class LocalTestEnvWrapper(TestEnvWrapper):
         self.prev_deadlocks = 0
         self.prev_distance = []
 
-    def reset(self):
-        feature, _ = self.env.reset()
+    def reset(self, random_seed=None, regenerate_rail=True, regenerate_schedule=True):
+        feature, _ = self.env.reset(
+            regenerate_rail=regenerate_rail,
+            regenerate_schedule=regenerate_schedule,
+            random_seed=random_seed,
+        )
         self.update_obs_properties()
         stdobs = (feature, self.obs_properties)
         obs_list = [self.parse_features(*stdobs)]
