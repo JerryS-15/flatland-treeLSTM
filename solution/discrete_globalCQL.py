@@ -20,8 +20,8 @@ class MultiAgentGlobalDiscreteCQL:
 
         self.model = CQLNetwork().to(device)
         self.target_model = copy.deepcopy(self.model).to(device)
-        self.actor_optimizer = torch.optim.Adam(self.model.actor.parameters(), lr=lr)
-        self.critic_optimizer = torch.optim.Adam(self.model.critic.parameters(), lr=lr)
+        self.actor_optimizer = torch.optim.Adam(self.model.actor_net.parameters(), lr=lr)
+        self.critic_optimizer = torch.optim.Adam(self.model.global_q_net.parameters(), lr=lr)
 
         self.num_actions = num_actions
         self.alpha = alpha
