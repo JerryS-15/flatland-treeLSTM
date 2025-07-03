@@ -85,15 +85,15 @@ class CQLNetwork(nn.Module):
 
         agent_attr_embedding = self.attr_embedding(agents_attr)
         embedding = torch.cat([agent_attr_embedding, tree_embedding], dim=-1)
-        # att_embedding = self.transformer(embedding)
+        att_embedding = self.transformer(embedding)
 
-        # group_embedding = att_embedding.reshape(batch_size, -1) # [batch_size, n_agents * embed_dim]
+        group_embedding = att_embedding.reshape(batch_size, -1) # [batch_size, n_agents * embed_dim]
 
         # Action Embedding: one-hot per agent, then flatten
         action_one_hot = F.one_hot(actions, num_classes=fp.action_sz).float() # [batch_size, n_agents, actions]
         action_embedding = action_one_hot.reshape(batch_size, -1) # [batch_size, n_agents * actions]
 
-        q_input = torch.cat([embedding, action_embedding], dim=-1).view(batch_size, -1)
+        q_input = torch.cat([group_embedding, action_embedding], dim=-1)
         q_values = self.global_q_net(q_input).squeeze(-1)  # [batch_size]
 
         return q_values

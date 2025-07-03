@@ -116,7 +116,7 @@ def train_globalCQL(replay_buffer, data_file, num_actions, args, parameters):
             metrics = policy.train(batch)
             epoch_metrics.append(metrics)
             if ep % 1000 == 0:
-                tqdm.write(f"Epoch {ep}, Loss: {metrics['total_loss']:.4f}, Q_Loss: {metrics['q_loss']:.4f}")
+                tqdm.write(f"Epoch {ep}, Loss: {metrics['critic_loss']:.4f}, Actor Loss: {metrics['actor_loss']:.4f}")
 
         avg_metrics = {
             k: np.mean([m[k] for m in epoch_metrics])
@@ -137,7 +137,7 @@ def train_globalCQL(replay_buffer, data_file, num_actions, args, parameters):
             "A2C-CQL/target_q_mean": avg_metrics["target_q_mean"]
         }, step=training_iters)
 
-        print(f"[A2C-CQL] Iteration: {training_iters} | Total Loss: {avg_metrics['total_loss']:.3f}")
+        print(f"[A2C-CQL] Iteration: {training_iters} | Critic Loss: {avg_metrics['critic_loss']:.3f} | Actor Loss: {avg_metrics['actor_loss']:.3f}")
 
         training_iters += int(parameters["eval_freq"])
 

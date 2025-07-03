@@ -57,7 +57,14 @@ class MultiAgentGlobalDiscreteCQL:
             next_probs = F.softmax(next_logits, dim=-1)
             next_actions = next_probs.argmax(dim=-1)
             next_q = self.target_model.critic(next_agents_attr, next_forest, next_adjacency, next_node_order, next_edge_order, next_actions)
-            target_q = rewards + self.discount * (1 - dones) * next_q
+            rewards_all = rewards.float().mean(dim=1)
+            # print("**********DEBUG**********")
+            # print("rewards.shape:", rewards.shape)
+            # print("dones.shape:", dones.shape)
+            # print(dones)
+            # print("max_next_q.shape:", next_q.shape)
+            # print("**********DEBUG**********")
+            target_q = rewards_all + self.discount * (1 - dones) * next_q
 
             # next_q_values = self.target_model(next_agents_attr, next_forest, next_adjacency, next_node_order, next_edge_order)
             # max_next_q, _ = next_q_values.max(dim=-1, keepdim=True)
@@ -74,7 +81,7 @@ class MultiAgentGlobalDiscreteCQL:
 
         # CQL Penalty
         with torch.no_grad():
-            all_logits = self.model.actor(agents_attr, forest, adjacency, node_order, edge_order, actions)
+            all_logits = self.model.actor(agents_attr, forest, adjacency, node_order, edge_order)
         all_probs = F.log_softmax(all_logits, dim=-1)
         num_actions = all_logits.size(-1)
 
@@ -97,7 +104,12 @@ class MultiAgentGlobalDiscreteCQL:
         # Actor loss: maximize critic(Q)
         logits = self.model.actor(agents_attr, forest, adjacency, node_order, edge_order)
         dist = F.log_softmax(logits, dim=-1)
-        actions_pred = dist.exp().multinomial(num_samples=1).squeeze(-1)
+        # print("**********DEBUG**********")
+        # print(f"logits: {type(logits)}, {len(logits)}")
+        # print(type(dist), len(dist))
+        # print("**********DEBUG**********")
+        flat_dist = dist.view(-1, dist.shape[-1]) 
+        actions_pred = flat_dist.exp().multinomial(num_samples=1).squeeze(-1)
         actor_q = self.model.critic(agents_attr, forest, adjacency, node_order, edge_order, actions_pred)
         actor_loss = -actor_q.mean()
 
