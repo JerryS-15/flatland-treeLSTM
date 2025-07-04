@@ -1,33 +1,42 @@
 import numpy as np
 import torch
 
-from nn.bcq import QNetwork, BehaviorCloneNetwork
+from nn.net_bcq import BCQNetwork
 
 
 class Actor:
-    def __init__(self, model_path) -> None:
-        self.net = QNetwork(input_dim=30300, output_dim=50 * 5)
-        self.net.load_state_dict(
-            torch.load(model_path, map_location=torch.device("cpu"))
-        )
+    def __init__(self, model_path, threshold=0.3) -> None:
+        self.net = BCQNetwork()
+        state_dict = torch.load(model_path, map_location=torch.device("cpu"))
+        if 'Q' in state_dict:
+            state_dict = state_dict['Q']
+        self.net.load_state_dict(state_dict)
+        # self.net.load_state_dict(
+        #     torch.load(model_path, map_location=torch.device("cpu"))
+        # )
         self.net.eval()
+        self.threshold = threshold
 
     def get_actions(self, obs_list, valid_actions, n_agents):
-        # obs = torch.from_numpy(np.array(obs)).float()
         feature = self.get_feature(obs_list)
-        # print("feature: ", type(feature), len(feature))
-
-        logits = self.net(feature)
-        logits = logits.detach().numpy().reshape(n_agents, 5)
+        with torch.no_grad():
+            q_values, log_imt, _ = self.net(*feature)
+            q_values = q_values[0].cpu().numpy()
+            imt = log_imt.exp()[0].cpu().numpy()
+        
         actions = dict()
         valid_actions = np.array(valid_actions)
-        # print("Dimension of valid_actions: ", valid_actions.shape)
-
         for i in range(n_agents):
-            if n_agents == 1:
-                actions[i] = self._choose_action(valid_actions[i, :], logits)
+            mask = (imt[i] / imt[i].max()) > self.threshold
+            valid_mask = valid_actions[i].astype(bool)
+
+            filtered_logits = q_values[i].copy()
+            filtered_logits[~(mask & valid_mask)] = -1e8
+
+            if valid_mask.sum() == 0:
+                actions[i] = np.random.randint(len(valid_actions[i]))
             else:
-                actions[i] = self._choose_action(valid_actions[i, :], logits[i, :])
+                actions[i] = int(np.argmax(filtered_logits))
         return actions
 
     def _choose_action(self, valid_actions, logits, soft_or_hard_max="soft"):
@@ -49,28 +58,29 @@ class Actor:
         return action
 
     def get_feature(self, obs_list):
-        # print("obs_list: ", len(obs_list))
-        features = []
+        agents_attr = obs_list[0]["agent_attr"]
+        agents_attr = torch.unsqueeze(torch.from_numpy(agents_attr), axis=0).to(
+            dtype=torch.float32
+        )
 
-        for obs_dict in obs_list:
-            agent_attr = np.array(obs_dict["agent_attr"], dtype=np.float32).flatten()
-            forest = np.array(obs_dict["forest"], dtype=np.float32).reshape(50, -1).flatten()
-            adjacency = np.array(obs_dict["adjacency"], dtype=np.float32).reshape(50, -1).flatten()
-            node_order = np.array(obs_dict["node_order"], dtype=np.float32).flatten()
-            edge_order = np.array(obs_dict["edge_order"], dtype=np.float32).flatten()
-            feature = np.concatenate([agent_attr, forest, adjacency, node_order, edge_order], axis=0)
-            features.append(feature)
-        # print(f"Flattened features: {flat_features[:10]}...")
-        return torch.FloatTensor(np.array(features, dtype=np.float32))
-        # # 处理每个特征，确保它们是numpy数组，并且转换为tensor
-        # agents_attr = torch.from_numpy(obs_list[0]["agent_attr"]).float()
-        # forest = torch.from_numpy(obs_list[0]["forest"]).float()
-        # adjacency = torch.from_numpy(obs_list[0]["adjacency"]).long()
-        # node_order = torch.from_numpy(obs_list[0]["node_order"]).long()
-        # edge_order = torch.from_numpy(obs_list[0]["edge_order"]).long()
+        forest = obs_list[0]["forest"]
+        forest = torch.unsqueeze(torch.from_numpy(forest), axis=0).to(
+            dtype=torch.float32
+        )
 
-        # # 进行拼接，假设我们要拼接这些特征形成一个大state
-        # state = torch.cat([agents_attr, forest.flatten(start_dim=1), adjacency.flatten(start_dim=1),
-        #         node_order.flatten(start_dim=1), edge_order.flatten(start_dim=1)], dim=1)
-    
-        # return state
+        adjacency = obs_list[0]["adjacency"]
+        adjacency = torch.unsqueeze(torch.from_numpy(adjacency), axis=0).to(
+            dtype=torch.int64
+        )
+
+        node_order = obs_list[0]["node_order"]
+        node_order = torch.unsqueeze(torch.from_numpy(node_order), axis=0).to(
+            dtype=torch.int64
+        )
+
+        edge_order = obs_list[0]["edge_order"]
+        edge_order = torch.unsqueeze(torch.from_numpy(edge_order), axis=0).to(
+            dtype=torch.int64
+        )
+
+        return agents_attr, forest, adjacency, node_order, edge_order
