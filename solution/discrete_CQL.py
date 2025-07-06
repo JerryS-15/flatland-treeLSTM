@@ -76,7 +76,7 @@ class MultiAgentDiscreteCQL:
 
         bellman_loss = F.mse_loss(chosen_q, target_q)
 
-        # CQL Regularization
+        # CQL Regularization - uniform mu(s, a)
         logsumexp_q = torch.logsumexp(current_q_values, dim=-1)
         cql_penalty = (logsumexp_q - chosen_q).mean()
 
