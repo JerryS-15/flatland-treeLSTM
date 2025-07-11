@@ -38,7 +38,10 @@ def train_CQL(replay_buffer, data_file, num_actions, args, parameters):
     # buffer_name = f"{args.buffer_name}_{setting}"
     device = torch.device("cuda:5" if torch.cuda.is_available() else "cpu:5")
     print(f"Using device: {device}")
-    policy_name = f"cql-{parameters['number_of_agents']}-agents-{args.data_n_eps}eps-bs{parameters['batch_size']}"
+    if args.normal_reward:
+        policy_name = f"cql-{parameters['number_of_agents']}-agents-{args.data_n_eps}eps-normReward-bs{parameters['batch_size']}"
+    else:
+        policy_name = f"cql-{parameters['number_of_agents']}-agents-{args.data_n_eps}eps-bs{parameters['batch_size']}"
     policy_path = f"./policy/{policy_name}"
 
     policy = discrete_CQL.MultiAgentDiscreteCQL(
@@ -273,13 +276,17 @@ if __name__ == "__main__":
     parser.add_argument("--data_n_eps", default=1000, type=int, help="Number of episodes that dataset have")
     parser.add_argument("--cql", action="store_true", help="Train with Conservative Q-Learning")
     parser.add_argument("--cqlG", action="store_true", help="Train with Global Conservative Q-Learning based on A2C")
+    parser.add_argument("--normal_reward", action="store_true", help="Use dataset with normed_rewards for agent")
 
     args = parser.parse_args()
 
     parameters = flatland_parameters
 
     num_actions = 5
-    data_file = f"offlineData/offline_rl_data_treeLSTM_{parameters['number_of_agents']}_agents_{args.data_n_eps}_episodes.pkl"
+    if args.normal_reward:
+        data_file = f"offlineData/offline_rl_data_treeLSTM_{parameters['number_of_agents']}_agents_{args.data_n_eps}_episodes_normR.pkl"
+    else:
+        data_file = f"offlineData/offline_rl_data_treeLSTM_{parameters['number_of_agents']}_agents_{args.data_n_eps}_episodes.pkl"
     # data_file = f"offlineData/offline_rl_data_treeLSTM_{parameters['number_of_agents']}_agents.pkl"
 
     print("---------------------------------------")

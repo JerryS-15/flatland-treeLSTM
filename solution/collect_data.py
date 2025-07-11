@@ -221,7 +221,10 @@ if __name__ == "__main__":
         # pickle.dump(episode_data, f)
     print("Offline RL data is saved at ", save_path)
 
-    dataset_info_path = f"offlineData/INFO-{collect_data_path_name}.csv"
+    if args.norm_rewards:
+        dataset_info_path = f"offlineData/INFO-{collect_data_path_name}_normR.csv"
+    else:
+        dataset_info_path = f"offlineData/INFO-{collect_data_path_name}.csv"
     df_info = pd.DataFrame(dataset_info, columns=[
         "episode", "total_reward", "norm_reward", "arrival_ratio", "num_samples_per_episode"
     ])  
