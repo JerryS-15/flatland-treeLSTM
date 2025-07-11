@@ -26,7 +26,7 @@ import pandas as pd
 N_AGENTS = 5
 WIDTH = 30
 HEIGHT = 35
-NUM_EPISODES = 2000
+NUM_EPISODES = 1000
 MAX_TIMESTEPS = 5000
 collect_data_path_name = f"offline_rl_data_treeLSTM_{N_AGENTS}_agents_{NUM_EPISODES}_episodes"
 
@@ -91,6 +91,7 @@ def get_args():
     )
     parser.add_argument("--save-video", "-s", default=None, help="path to save video")
     parser.add_argument("--episodes", type=int, default=NUM_EPISODES, help="number of episodes when collecting data")
+    parser.add_argument("--norm-rewards", "-nr", action="store_true", help="if collect norm rewards for agent")
     # parser.add_argument("--n_agents", type=int, default=10, help="number of agents in the environment")
     args = parser.parse_args()
     return args
@@ -98,6 +99,9 @@ def get_args():
 
 if __name__ == "__main__":
     args = get_args()
+
+    if args.norm_rewards:
+        print("Use norm reward for data collection.")
 
     print("---------------------------------------")
     print(f"Data Collection Started for {N_AGENTS} agents, {args.episodes} episodes.")
@@ -129,7 +133,10 @@ if __name__ == "__main__":
     actor = Actor(model_path)
     print(f"Load actor from {model_path}")
 
-    save_path = f"offlineData/{collect_data_path_name}.pkl"
+    if args.norm_rewards:
+        save_path = f"offlineData/{collect_data_path_name}_normR.pkl"
+    else:
+        save_path = f"offlineData/{collect_data_path_name}.pkl"
 
     # create video writer
     if args.save_video is not None:
@@ -175,7 +182,13 @@ if __name__ == "__main__":
                 video_writer.write(frame)
 
             if done["__all__"]:
-                arrival_ratio, total_reward, norm_reward = env_wrapper.final_metric()
+                arrival_ratio, total_reward, norm_reward, agent_norm_reward = env_wrapper.final_metric()
+
+                if args.norm_rewards:
+                    last_entry = list(episode_data[-1])
+                    last_entry[2] = copy.deepcopy(agent_norm_reward)  # Replace reward
+                    episode_data[-1] = tuple(last_entry)
+
                 print(f"TOTAL_REW: {total_reward}, NORM_REW: {norm_reward:.4f}, ARR_RATIO: {arrival_ratio*100:.2f}%, with {len(episode_data)} samples.")
                 info_data.append((
                     episode,

@@ -1,6 +1,6 @@
 import pickle
 
-file_path = 'offlineData/offline_rl_data_treeLSTM_10_test.pkl'
+file_path = 'offlineData/offline_rl_data_treeLSTM_5_agents_50_episodes_normR.pkl'
 
 try:
     with open(file_path, 'rb') as f:
@@ -9,9 +9,9 @@ try:
     print("Data type:", type(data))
     print("Data len: ", len(data))
 
-    for i in range (0, 100):
+    for i in range (0, 1000):
         print("printout test:", i)
-        print(data[i][1])
+        print(data[i][2])
 
     """
     Data type: <class 'list'>

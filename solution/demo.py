@@ -19,9 +19,9 @@ from utils import VideoWriter, debug_show
 
 def create_random_env():
     return RailEnv(
-        number_of_agents=10,
-        width=30,
-        height=35,
+        number_of_agents=5,
+        width=50,
+        height=50,
         rail_generator=SparseRailGen(
             max_num_cities=3,
             grid_mode=False,
@@ -110,10 +110,11 @@ if __name__ == "__main__":
     while True:
         va = env_wrapper.get_valid_actions()
         action = actor.get_actions(obs, va, n_agents)
+        # print(f"Step {obs[0]['curr_step']}: actions {type(action)} - {action}")
         # obs, all_rewards, done = env_wrapper.step(action)
         obs, all_rewards, done, step_rewards = env_wrapper.step(action)
 
-        # print(f"Step {obs[0]['curr_step']}: ")
+        # print(f"Step {obs[0]['curr_step']}: actions {action}")
         # print("agent_attr[0]: ", obs[0]['agent_attr'][0])
         # print("node_order[0]: ", obs[0]['node_order'][0])
         # print("edge_order[0]: ", obs[0]['edge_order'][0])
@@ -132,7 +133,7 @@ if __name__ == "__main__":
                 video_writer.close()
                 print(f"Write video to {args.save_video}")
 
-            arrival_ratio, total_reward, norm_reward = env_wrapper.final_metric()
+            arrival_ratio, total_reward, norm_reward, _ = env_wrapper.final_metric()
             print(f"TOTAL_REW: {total_reward}")
             print(f"NORM_REW: {norm_reward:.4f}")
             print(f"ARR_RATIO: {arrival_ratio*100:.2f}%")

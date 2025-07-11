@@ -87,6 +87,7 @@ class TestEnvWrapper:
         env = self.env
 
         n_arrival = 0
+        agent_norm_rewards = {}
         for a in env.agents:
             if a.position is None and a.state != TrainState.READY_TO_DEPART:
                 n_arrival += 1
@@ -97,7 +98,17 @@ class TestEnvWrapper:
         # print(env.rewards_dict)
         norm_reward = 1 + total_reward / env._max_episode_steps / env.get_num_agents()
 
-        return arrival_ratio, total_reward, norm_reward
+        for i in range (len(list(env.rewards_dict.values()))):
+            agent_reward = list(env.rewards_dict.values())[i]
+            agent_norm_reward = 1 + agent_reward / env._max_episode_steps
+            agent_norm_rewards[i] = agent_norm_reward
+        
+        # print(f"env.rewards_dict: {env.rewards_dict}")
+        # print(f"agent_norm_rewards: {agent_norm_rewards}")
+        # print(f"total_reward: {total_reward}")
+        # print(f"norm_reward: {norm_reward}")
+
+        return arrival_ratio, total_reward, norm_reward, agent_norm_rewards
     
     # def get_step_reward(self):
     #     env = self.env
