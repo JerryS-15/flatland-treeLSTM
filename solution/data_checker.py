@@ -1,6 +1,6 @@
 import pickle
 
-file_path = 'offlineData/offline_rl_data_treeLSTM_5_agents_50_episodes_normR.pkl'
+file_path = 'offlineData/offline_rl_data_treeLSTM_5_agents_1000_episodes_normR.pkl'
 
 try:
     with open(file_path, 'rb') as f:
