@@ -10,7 +10,7 @@ class MultiAgentDiscreteCQL:
         self,
         num_actions,
         device,
-        alpha=10.0,
+        alpha=1.0,
         discount=0.99,
         tau=0.005,
         lr=3e-4,
