@@ -256,7 +256,7 @@ if __name__ == "__main__":
 		# 	"eps": 0.00015
 		# },
 		# Flatland Env
-        "number_of_agents": 5,
+        "number_of_agents": 20,
         "width": 30,
         "height": 35,
         "max_num_cities": 3,
@@ -273,7 +273,7 @@ if __name__ == "__main__":
     parser.add_argument("--max_timesteps", default=1e6, type=int)  # 1e6
     parser.add_argument("--CQL_alpha", default=1.0, type=float, help="Regularization strength for CQL")
     parser.add_argument("--seed", default=0, type=int)
-    parser.add_argument("--data_n_eps", default=1000, type=int, help="Number of episodes that dataset have")
+    parser.add_argument("--data_n_eps", default=2000, type=int, help="Number of episodes that dataset have")
     parser.add_argument("--cql", action="store_true", help="Train with Conservative Q-Learning")
     parser.add_argument("--cqlG", action="store_true", help="Train with Global Conservative Q-Learning based on A2C")
     parser.add_argument("--normal_reward", action="store_true", help="Use dataset with normed_rewards for agent")

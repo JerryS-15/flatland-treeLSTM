@@ -34,7 +34,10 @@ import discrete_BCQ
 def train_BCQ(replay_buffer, data_file, num_actions, args, parameters):
     device = torch.device("cuda:4" if torch.cuda.is_available() else "cpu:4")
     print(f"Using device: {device}")
-    policy_name = f"bcq-{parameters['number_of_agents']}-agents-{args.data_n_eps}eps-bs{parameters['batch_size']}"
+    if args.normal_reward:
+        policy_name = f"bcq-{parameters['number_of_agents']}-agents-{args.data_n_eps}eps-normReward-bs{parameters['batch_size']}"
+    else:
+        policy_name = f"bcq-{parameters['number_of_agents']}-agents-{args.data_n_eps}eps-bs{parameters['batch_size']}"
     policy_path = f"./policy/{policy_name}"
 
     policy = discrete_BCQ.MultiAgentDiscreteBCQ(
@@ -190,7 +193,7 @@ if __name__ == "__main__":
 		# 	"eps": 0.00015
 		# },
 		# Flatland Env
-        "number_of_agents": 10,
+        "number_of_agents": 20,
         "width": 30,
         "height": 35,
         "max_num_cities": 3,
@@ -207,14 +210,18 @@ if __name__ == "__main__":
     parser.add_argument("--max_timesteps", default=1e6, type=int)  # 1e6
     parser.add_argument("--CQL_alpha", default=1.0, type=float, help="Regularization strength for CQL")
     parser.add_argument("--seed", default=0, type=int)
-    parser.add_argument("--data_n_eps", default=1000, type=int, help="Number of episodes that dataset have")
+    parser.add_argument("--data_n_eps", default=2000, type=int, help="Number of episodes that dataset have")
+    parser.add_argument("--normal_reward", action="store_true", help="Use dataset with normed_rewards for agent")
 
     args = parser.parse_args()
 
     parameters = flatland_parameters
 
     num_actions = 5
-    data_file = f"offlineData/offline_rl_data_treeLSTM_{parameters['number_of_agents']}_agents_{args.data_n_eps}_episodes.pkl"
+    if args.normal_reward:
+        data_file = f"offlineData/offline_rl_data_treeLSTM_{parameters['number_of_agents']}_agents_{args.data_n_eps}_episodes_normR.pkl"
+    else:
+        data_file = f"offlineData/offline_rl_data_treeLSTM_{parameters['number_of_agents']}_agents_{args.data_n_eps}_episodes.pkl"
     # data_file = f"offlineData/offline_rl_data_treeLSTM_{parameters['number_of_agents']}_agents.pkl"
 
     print("---------------------------------------")
