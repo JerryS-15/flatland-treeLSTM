@@ -151,7 +151,7 @@ def eval_policy(model_path, env_params, seed, eval_episodes=10):
             obs, all_rewards, done, _ = env_wrapper.step(actions)
             # ep_reward += sum(all_rewards.values())
         
-        arrival_ratio, total_reward, norm_reward = env_wrapper.final_metric()
+        arrival_ratio, total_reward, norm_reward, _ = env_wrapper.final_metric()
         total_rewards.append(total_reward)
         norm_rewards.append(norm_reward)
         arrival_ratios.append(arrival_ratio)
