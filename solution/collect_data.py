@@ -23,7 +23,7 @@ import os
 import copy
 import pandas as pd
 
-N_AGENTS = 20
+N_AGENTS = 10
 WIDTH = 30
 HEIGHT = 35
 NUM_EPISODES = 1000
