@@ -99,15 +99,15 @@ def test_flatland_deterministic_map_generation(base_seed, test_steps):
         print(f"Round {ep} : seed_reset to {seed_reset}")
         obs = env_wrapper.reset(random_seed=seed_reset)
         h = rail_hash(env_wrapper.env)
-        assert h == episode_hashes[ep], f"Map hash mismatch on episode {ep+1} !"
+        assert h == episode_hashes[ep], f"❌ Map hash mismatch on episode {ep+1} !"
         counter = 0
 
         for i, agent in enumerate(eval_env.agents):
             agent = [i, agent.initial_position, agent.target]
-            assert agent == agent_positions[i + ep * n_agents], f"Agent initialized positions mismatch on episode {ep+1}, agent {i} !"
+            assert agent == agent_positions[i + ep * n_agents], f"❌ Agent initialized positions mismatch on episode {ep+1}, agent {i} !"
         
         while counter < test_steps:
             counter += 1
             obs, all_rewards, done, _ = env_wrapper.step(actions)
     
-    assert len(set(episode_hashes)) == 10, "Expected 10 unique maps with different seeds!"
+    assert len(set(episode_hashes)) == 10, "❌ Expected 10 unique maps with different seeds!"
