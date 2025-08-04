@@ -3,8 +3,8 @@ import numpy as np
 import hashlib
 import pickle
 
-@pytest.mark.parameterize("v1_env", ["test/env_v2.pkl"])
-@pytest.mark.parameterize("v2_env", ["test/env_v3.pkl"])
+@pytest.mark.parametrize("v1_env", ["test/env_v2.pkl"])
+@pytest.mark.parametrize("v2_env", ["test/env_v3.pkl"])
 def test_map_version(v1_env, v2_env):
     with open(v1_env, "rb") as f1:
         v1_env_data = pickle.load(f1)
