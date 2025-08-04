@@ -50,7 +50,7 @@ def hash_array(arr):
 if __name__ == "__main__":
 
     init_seed = 42
-    save_path = "test/env_v3.pkl"
+    save_path = "env_v3.pkl"
 
     flatland_parameters = {
         # Flatland Env
