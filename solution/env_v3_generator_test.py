@@ -88,9 +88,9 @@ if __name__ == "__main__":
             "rail_hash": rail_hash,
             "agent_hash": agent_hash,
             "grid_shape": rail_grid.shape,
+            "agent_info": agent_info,
             # Optional storage of original data（for debug）
             # "rail_grid": rail_grid
-            # "agent_info": agent_info,
         })
 
         tqdm.write(f"Episode {i+1}, Seed {seed} Stored.")
