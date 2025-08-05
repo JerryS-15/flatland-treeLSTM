@@ -19,13 +19,13 @@ def test_map_version(v1_env, v2_env):
         seed2 = e2.get("seed")
         assert seed1 == seed2, f"❌ [Episode {idx}] seed mismatch: {seed1} vs {seed2}"
 
-        rail_hash1 = e1.get("rail_hash")
-        rail_hash2 = e2.get("rail_hash")
-        assert rail_hash1 == rail_hash2, f"❌ [Episode {idx} seed {seed2}] rail grid mismatch"
-
         grid_shape1 = e1.get("grid_shape")
         grid_shape2 = e2.get("grid_shape")
         assert grid_shape1 == grid_shape2, f"❌ [Episode {idx} seed {seed2}] rail grid shape mismatch"
+
+        rail_hash1 = e1.get("rail_hash")
+        rail_hash2 = e2.get("rail_hash")
+        assert rail_hash1 == rail_hash2, f"❌ [Episode {idx} seed {seed2}] rail grid mismatch"
 
         agent_hash1 = e1.get("agent_hash")
         agent_hash2 = e2.get("agent_hash")
