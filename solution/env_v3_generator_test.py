@@ -90,7 +90,7 @@ if __name__ == "__main__":
             "grid_shape": rail_grid.shape,
             "agent_info": agent_info,
             # Optional storage of original data（for debug）
-            # "rail_grid": rail_grid
+            "rail_grid": rail_grid
         })
 
         tqdm.write(f"Episode {i+1}, Seed {seed} Stored.")
