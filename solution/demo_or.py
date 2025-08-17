@@ -19,9 +19,10 @@ from flatland.utils.rendertools import RenderTool
 
 from test_env_rebuild import load_env_data, rebuild_env_from_data
 
-seed = 1
+seed = 5
 env_path = f"or_solution_data/env_data_v2_{seed}.pkl"
 action_path = f"or_solution_data/action_data_v2_{seed}.pkl"
+step_path = f"or_solution_data/step_data_v2_{seed}.pkl"
 
 def rebuild_wrapped_env_from_data(data):
     rail = data["rail"]
@@ -109,78 +110,47 @@ def get_model_path(n_agents):
         model_path = "policy/phase-III-200.pt"
     return model_path
 
-# === 加入 spawn_from_expert 和 replay_expert 函数 ===
-def spawn_from_expert(expert_actions: dict) -> dict:
+def inject_agent_states(env, agent_states, action_dict):
     """
-    Returns a dict: {step: [agent_ids]} indicating at which step each agent should spawn.
+    将外部收集到的 agent 状态(来自 v2.2.1 replay) 同步到当前 v3.0.15 环境。
+    agent_states: List[Dict]，每个 dict 包含 position, direction, status 等字段
     """
-    spawn_schedule = {}
+    for i, agent in enumerate(env.agents):
+        # 清除旧状态
+        agent.state = TrainState.READY_TO_DEPART
+        agent.position = None
 
-    for agent_id, actions in expert_actions.items():
-        for step, action in enumerate(actions):
-            if action != 4:  # DO_NOTHING
-                if step not in spawn_schedule:
-                    spawn_schedule[step] = []
-                spawn_schedule[step].append(agent_id)
-                break  # Only first movement matters
-
-    return spawn_schedule
-
-def replay_expert(env_wrapper, expert_actions: dict, record_data=False, render=False, fps=30):
-    spawn_schedule = spawn_from_expert(expert_actions)
-    n_agents = len(env_wrapper.env.agents)
-    step = 0
-    done = {"__all__": False}
-    dataset = []
-
-    obs = env_wrapper.reset()
-
-    while not done["__all__"]:
-        # 1. Spawn agents
-        for agent_id in spawn_schedule.get(step, []):
-            agent = env_wrapper.env.agents[agent_id]
-            if agent.position is None:
-                agent.position = agent.initial_position
-                agent.state = TrainState.MOVING
-
-        # 2. Expert actions
-        action = {}
-        for agent_id in range(n_agents):
-            if step < len(expert_actions[agent_id]):
-                action[agent_id] = expert_actions[agent_id][step]
+    for i, agent_state in enumerate(agent_states):
+        agent = env.agents[i]
+        agent.direction = agent_state['direction']
+        if agent_state['status'] ==  "READY_TO_DEPART":
+            agent.state = TrainState.READY_TO_DEPART
+            agent.position = None
+            action_dict[i] = 0
+        elif agent_state['status'] == "ACTIVE":
+            agent.position = agent_state['position']
+            if action_dict[i] == 4:
+                agent.state = TrainState.STOPPED
             else:
-                action[agent_id] = 4  # DO_NOTHING
+                agent.state = TrainState.MOVING
+        elif agent_state['status'] == "DONE_REMOVED":
+            agent.position = agent_state['position']
+            agent.state = TrainState.DONE
+        else:
+            pass
+        # agent.speed_data = agent_state.get("speed_data", agent.speed_data)
+        # agent.malfunction_data = agent_state.get("malfunction_data", agent.malfunction_data)
 
-        # 3. Step
-        next_obs, rewards, done, _ = env_wrapper.step(action)
-
-        if record_data:
-            dataset.append({
-                "step": step,
-                "obs": obs,
-                "action": action,
-                "reward": rewards,
-                "next_obs": next_obs,
-                "done": done
-            })
-        
-        # 4. Render
-        if render:
-            debug_show(env_wrapper.env)
-            sleep(1 / fps)
-        
-        if done["__all__"]:
-            arrival_ratio, total_reward, norm_reward, _ = env_wrapper.final_metric()
-            print(f"TOTAL_REW: {total_reward}")
-            print(f"NORM_REW: {norm_reward:.4f}")
-            print(f"ARR_RATIO: {arrival_ratio*100:.2f}%")
-            # print("Agent reached target!")
-            break
-
-        obs = next_obs
-        step += 1
-
-    return dataset if record_data else None
+def get_states(env, agent_states, action_dict):
+    for i, agent_state in enumerate(agent_states):
+        agent = env.agents[i]
+        if agent_state['status'] == "READY_TO_DEPART":
+            agent.state = TrainState.READY_TO_DEPART
+            agent.position = None
+            action_dict[i] = 0
+            print("########## Agent State Set! ##########")
+        else:
+            continue
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -205,80 +175,12 @@ if __name__ == "__main__":
     env_wrapper = rebuild_wrapped_env_from_data(env_data)
     # env = rebuild_wrapped_env_from_data(env_data)
     # env_renderer = RenderTool(env)
+    step_data = load_env_data(step_path)
 
     obs = env_wrapper.reset()
     
     for agent in env_wrapper.env.agents:
         agent.earliest_departure = 0
-    
-    ###
-    # spawn_blocked_until = {}
-    
-    # def custom_spawn(env, current_step, spawn_delay=2):
-    #     """
-    #     自定义 spawn 函数：
-    #     - earliest_departure=0 的 agent 在 step=0 就可以出发
-    #     - 如果多个 agent 起点相同，第二个及之后的 agent 会排队，
-    #       直到前面的 agent 离开起点后才能 spawn
-    #     """
-    #     # 每个起点维护一个 spawn 队列
-    #     if not hasattr(env, "_spawn_queue"):
-    #         env._spawn_queue = {}
-    #     if not hasattr(env, "_spawn_clock"):
-    #         env._spawn_clock = {}  # 每个起点的内部 clock
-        
-    #     print(f"### {current_step}, {env._spawn_clock} ###")
-
-    #     for handle, agent in enumerate(env.agents):
-    #         start_pos = agent.initial_position
-    #         if start_pos is None:
-    #             continue
-
-    #         # 第一次见到这个起点 → 初始化队列
-    #         if start_pos not in env._spawn_queue:
-    #             env._spawn_queue[start_pos] = []
-    #         if start_pos not in env._spawn_clock:
-    #             env._spawn_clock[start_pos] = 0
-
-    #         # agent 未进入轨道且到达 earliest_departure 时 → 加入队列
-    #         if agent.position is None and current_step >= agent.earliest_departure:
-    #             if handle not in env._spawn_queue[start_pos]:
-    #                 env._spawn_queue[start_pos].append(handle)
-
-    #     # 遍历每个起点，检查是否可以 spawn 队列的第一个 agent
-    #     for start_pos, queue in env._spawn_queue.items():
-    #         if not queue:
-    #             continue
-
-            # 检查起点是否空
-            # occupied_positions = [pos for pos in env.agent_positions if pos is not None]
-            # if tuple(start_pos) in map(tuple, occupied_positions):
-            #     continue  # 起点被占，不能 spawn
-
-            # 初始化 clock
-            # if start_pos not in env._spawn_clock:
-            #     env._spawn_clock[start_pos] = 0
-            
-            # # 检查队首 agent 是否可以 spawn
-            # handle = queue[0]
-            # agent = env.agents[handle]
-
-            # # 当 clock 达到 spawn_delay 时才能 spawn
-            # if env._spawn_clock[start_pos] >= spawn_delay or env._spawn_clock[start_pos] == 0:
-            #     print(f"###### NEW SPAWN! ######")
-            #     # spawn agent
-            #     agent.position = start_pos
-            #     agent.state = TrainState.MOVING
-            #     agent.speed_counter = SpeedCounter(agent.speed_counter.speed)
-            
-            #     # 弹出队列
-            #     queue.pop(0)
-
-            #     # 重置 clock（下一个 agent 会从 1 开始计数）
-            #     env._spawn_clock[start_pos] = 0
-            # else:
-            #     # clock 自增
-            #     env._spawn_clock[start_pos] += 1
 
     for i, agent in enumerate(env_wrapper.env.agents):
         print(f"Agent {i} earliest_departure: {agent.earliest_departure}")
@@ -292,55 +194,83 @@ if __name__ == "__main__":
 
     default_actions = {handle: 0 for handle in range(env_wrapper.env.number_of_agents)}
 
-    step = -1
-    # clock = 0
-    # for agent in env_wrapper.env.agents:
-    #     if agent.position is None:
-    #         agent.earliest_departure = 0
-    #         agent.state = agent.state.MOVING
-    #         agent.position = agent.initial_position
+    step = 0
     while True:
-        ###
-        # custom_spawn(env_wrapper.env, step)
-
-        if args.use_model:
-            va = env_wrapper.get_valid_actions()
-            action = actor.get_actions(obs, va, n_agents)
+        if step < 0:
+            action = default_actions
         else:
-            if step < 0:
-                action = default_actions
-            else:
-                action = get_or_actions(step)
+            action = get_or_actions(step)
+            agent_states = step_data[step]
+            inject_agent_states(env_wrapper.env, agent_states, action)
         print(f"{step}: {action}")
         obs, all_rewards, done, step_rewards = env_wrapper.step(action)
-        # obs, all_rewards, done, _ = env.step(action)
-        print(f"dones: {done}")
-        for idx, agent in enumerate(env_wrapper.env.agents):
-            print(f"Agent {idx} position: {agent.position}, direction: {agent.direction}, target={agent.target}, init={agent.initial_position}")
 
         step = step + 1
 
-        # if step >= len(load_env_data(action_path)):
-        #     print("No more actions in the dataset, stopping.")
-        #     arrival_ratio, total_reward, norm_reward, _ = env_wrapper.final_metric()
-        #     print(f"TOTAL_REW: {total_reward}")
-        #     print(f"NORM_REW: {norm_reward:.4f}")
-        #     print(f"ARR_RATIO: {arrival_ratio*100:.2f}%")
-        #     break
+        print(f"dones: {done}")
+        for idx, agent in enumerate(env_wrapper.env.agents):
+            print(f"Agent {idx} position: {agent.position}, direction: {agent.direction}, target={agent.target}, init={agent.initial_position}")
+            # print(f"Agent {idx} info: {agent.state}")
 
         if args.render:
             debug_show(env_wrapper.env)
-            # env_renderer.render_env(show=True, frames=True, show_observations=False)
             sleep(1 / args.fps)
-        
+
         if done["__all__"]:
             arrival_ratio, total_reward, norm_reward, _ = env_wrapper.final_metric()
             print(f"TOTAL_REW: {total_reward}")
             print(f"NORM_REW: {norm_reward:.4f}")
             print(f"ARR_RATIO: {arrival_ratio*100:.2f}%")
-            # print("Agent reached target!")
             break
-    
+
+    """
+    Original loop
+    """
+    # step = -1
+    # while True:
+    #     if args.use_model:
+    #         va = env_wrapper.get_valid_actions()
+    #         action = actor.get_actions(obs, va, n_agents)
+    #     else:
+    #         if step < 0:
+    #             action = default_actions
+    #         else:
+    #             agent_states = step_data[step]
+    #             action = get_or_actions(step)
+    #             get_states(env_wrapper.env, agent_states, action)
+    #     print(f"{step}: {action}")
+    #     obs, all_rewards, done, step_rewards = env_wrapper.step(action)
+    #     # obs, all_rewards, done, _ = env.step(action)
+    #     print(f"dones: {done}")
+    #     for idx, agent in enumerate(env_wrapper.env.agents):
+    #         print(f"Agent {idx} position: {agent.position}, direction: {agent.direction}, target={agent.target}, init={agent.initial_position}")
+    #         print(f"Agent {idx} info: {agent.state}")
+
+    #     step = step + 1
+
+    #     # if step >= len(load_env_data(action_path)):
+    #     #     print("No more actions in the dataset, stopping.")
+    #     #     arrival_ratio, total_reward, norm_reward, _ = env_wrapper.final_metric()
+    #     #     print(f"TOTAL_REW: {total_reward}")
+    #     #     print(f"NORM_REW: {norm_reward:.4f}")
+    #     #     print(f"ARR_RATIO: {arrival_ratio*100:.2f}%")
+    #     #     break
+
+    #     if args.render:
+    #         debug_show(env_wrapper.env)
+    #         # env_renderer.render_env(show=True, frames=True, show_observations=False)
+    #         sleep(1 / args.fps)
+        
+    #     if done["__all__"]:
+    #         arrival_ratio, total_reward, norm_reward, _ = env_wrapper.final_metric()
+    #         print(f"TOTAL_REW: {total_reward}")
+    #         print(f"NORM_REW: {norm_reward:.4f}")
+    #         print(f"ARR_RATIO: {arrival_ratio*100:.2f}%")
+    #         # print("Agent reached target!")
+    #         break
+    """
+    End of original loop
+    """
     # if args.render:
     #     env_renderer.close_window()
 
