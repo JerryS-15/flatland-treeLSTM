@@ -35,9 +35,15 @@ def train_BCQ(replay_buffer, data_file, num_actions, args, parameters):
     device = torch.device("cuda:4" if torch.cuda.is_available() else "cpu:4")
     print(f"Using device: {device}")
     if args.normal_reward:
-        policy_name = f"bcq-{parameters['number_of_agents']}-agents-{args.data_n_eps}eps-normReward-bs{parameters['batch_size']}"
+        if args.use_or:
+            policy_name = f"bcq-or-{parameters['number_of_agents']}-agents-{args.data_n_eps}eps-normReward-bs{parameters['batch_size']}"
+        else:
+            policy_name = f"bcq-{parameters['number_of_agents']}-agents-{args.data_n_eps}eps-normReward-bs{parameters['batch_size']}"
     else:
-        policy_name = f"bcq-{parameters['number_of_agents']}-agents-{args.data_n_eps}eps-bs{parameters['batch_size']}"
+        if args.use_or:
+            policy_name = f"bcq-or-{parameters['number_of_agents']}-agents-{args.data_n_eps}eps-bs{parameters['batch_size']}"
+        else:
+            policy_name = f"bcq-{parameters['number_of_agents']}-agents-{args.data_n_eps}eps-bs{parameters['batch_size']}"
     policy_path = f"./policy/{policy_name}"
 
     policy = discrete_BCQ.MultiAgentDiscreteBCQ(
@@ -109,14 +115,16 @@ def eval_policy(model_path, env_params, seed, eval_episodes=10):
         line_generator=SparseLineGen(
             speed_ratio_map=env_params['speed_ratio_map'],
         ),
-        malfunction_generator=ParamMalfunctionGen(
-            MalfunctionParameters(
-                malfunction_rate=env_params['malfunction_rate'],
-                min_duration=env_params['min_duration'],
-                max_duration=env_params['max_duration']
-            )
-        ),
+        # malfunction_generator=ParamMalfunctionGen(
+        #     MalfunctionParameters(
+        #         malfunction_rate=env_params['malfunction_rate'],
+        #         min_duration=env_params['min_duration'],
+        #         max_duration=env_params['max_duration']
+        #     )
+        # ),
+        malfunction_generator=None,
         obs_builder_object=TreeCutils(fp.num_tree_obs_nodes, fp.tree_pred_path_depth),
+        remove_agents_at_target=True,
         random_seed=seed + 100
     )
 
@@ -179,6 +187,20 @@ def eval_policy(model_path, env_params, seed, eval_episodes=10):
 
 if __name__ == "__main__":
 
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--max_timesteps", default=1e6, type=int)  # 1e6
+    parser.add_argument("--CQL_alpha", default=1.0, type=float, help="Regularization strength for CQL")
+    parser.add_argument("--seed", default=0, type=int)
+    parser.add_argument("--data_n_eps", default=2000, type=int, help="Number of episodes that dataset have")
+    parser.add_argument("--normal_reward", action="store_true", help="Use dataset with normed_rewards for agent")
+    parser.add_argument("--use_or", "-or", action="store_true", help="Train with or-solution dataset.")
+    parser.add_argument("--n_agents", default=5, type=int, help="Number of agents for training.")
+
+    args = parser.parse_args()
+
+    n_agents = args.n_agents
+    n_eps = args.data_n_eps
+
     flatland_parameters = {
 		# Evaluation
 		"eval_freq": 1e4,  #5e4
@@ -193,39 +215,41 @@ if __name__ == "__main__":
 		# 	"eps": 0.00015
 		# },
 		# Flatland Env
-        "number_of_agents": 10,
+        "number_of_agents": n_agents,
         "width": 30,
         "height": 35,
         "max_num_cities": 3,
         "max_rails_between_cities": 2,
         "max_rail_pairs_in_city": 2,
-        "speed_ratio_map": {1.0: 1 / 4, 0.5: 1 / 4, 0.33: 1 / 4, 0.25: 1 / 4},
+        "speed_ratio_map": {1.0: 1 / 3, 0.5: 1 / 3, 0.25: 1 / 3},
         # Flatland - malfunction
         "malfunction_rate": 1 / 4500,
         "min_duration": 20,
         "max_duration": 50
 	}
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--max_timesteps", default=1e6, type=int)  # 1e6
-    parser.add_argument("--CQL_alpha", default=1.0, type=float, help="Regularization strength for CQL")
-    parser.add_argument("--seed", default=0, type=int)
-    parser.add_argument("--data_n_eps", default=2000, type=int, help="Number of episodes that dataset have")
-    parser.add_argument("--normal_reward", action="store_true", help="Use dataset with normed_rewards for agent")
-
-    args = parser.parse_args()
-
     parameters = flatland_parameters
 
     num_actions = 5
-    if args.normal_reward:
-        data_file = f"offlineData/offline_rl_data_treeLSTM_{parameters['number_of_agents']}_agents_{args.data_n_eps}_episodes_normR.pkl"
+    if args.use_or:
+        if args.normal_reward:
+            data_file = f"orData_agent_{n_agents}_normR/or_data_{n_agents}_agents_{n_eps}_episodes.pkl"
+        else:
+            data_file = f"orData_agent_{n_agents}/or_data_{n_agents}_agents_{n_eps}_episodes.pkl"
     else:
-        data_file = f"offlineData/offline_rl_data_treeLSTM_{parameters['number_of_agents']}_agents_{args.data_n_eps}_episodes.pkl"
+        if args.normal_reward:
+            data_file = f"offlineData/offline_rl_data_treeLSTM_{parameters['number_of_agents']}_agents_{args.data_n_eps}_episodes_normR.pkl"
+        else:
+            data_file = f"offlineData/offline_rl_data_treeLSTM_{parameters['number_of_agents']}_agents_{args.data_n_eps}_episodes.pkl"
     # data_file = f"offlineData/offline_rl_data_treeLSTM_{parameters['number_of_agents']}_agents.pkl"
 
     print("---------------------------------------")
-    print("Start BCQ training for flatland TreeLSTM.")
+    if args.use_or:
+        print("Start BCQ training for flatland TreeLSTM with OR-Solution Dataset.")
+        mode = "BCQ-OR"
+    else:
+        print("Start BCQ training for flatland TreeLSTM.")
+        mode = "BCQ"
     print("Training Details:")
     print(f"Batch Size: {parameters['batch_size']}")
     print(f"Number of agents: {parameters['number_of_agents']}")
@@ -239,7 +263,7 @@ if __name__ == "__main__":
     print("Starting wandb, view at https://wandb.ai/")
     wandb.init(
 		project='flatland-TreeLSTM', 
-		name=f"BCQ_{parameters['number_of_agents']}agents_seed{args.seed}_{time.strftime('%m%d%H%M%S')}",
+		name=f"{mode}_{parameters['number_of_agents']}agents_seed{args.seed}_{time.strftime('%m%d%H%M%S')}",
 		config=parameters
 	)
 
