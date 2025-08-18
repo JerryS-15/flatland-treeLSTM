@@ -191,7 +191,7 @@ if __name__ == "__main__":
     parser.add_argument("--max_timesteps", default=1e6, type=int)  # 1e6
     parser.add_argument("--CQL_alpha", default=1.0, type=float, help="Regularization strength for CQL")
     parser.add_argument("--seed", default=0, type=int)
-    parser.add_argument("--data_n_eps", default=2000, type=int, help="Number of episodes that dataset have")
+    parser.add_argument("--data_n_eps", default=1000, type=int, help="Number of episodes that dataset have")
     parser.add_argument("--normal_reward", action="store_true", help="Use dataset with normed_rewards for agent")
     parser.add_argument("--use_or", "-or", action="store_true", help="Train with or-solution dataset.")
     parser.add_argument("--n_agents", default=5, type=int, help="Number of agents for training.")
