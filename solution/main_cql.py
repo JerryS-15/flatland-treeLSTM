@@ -39,9 +39,15 @@ def train_CQL(replay_buffer, data_file, num_actions, args, parameters):
     device = torch.device("cuda:5" if torch.cuda.is_available() else "cpu:5")
     print(f"Using device: {device}")
     if args.normal_reward:
-        policy_name = f"cql-{parameters['number_of_agents']}-agents-{args.data_n_eps}eps-normReward-bs{parameters['batch_size']}"
+        if args.use_or:
+            policy_name = f"cql-or-{parameters['number_of_agents']}-agents-{args.data_n_eps}eps-normReward-bs{parameters['batch_size']}"
+        else:
+            policy_name = f"cql-{parameters['number_of_agents']}-agents-{args.data_n_eps}eps-normReward-bs{parameters['batch_size']}"
     else:
-        policy_name = f"cql-{parameters['number_of_agents']}-agents-{args.data_n_eps}eps-bs{parameters['batch_size']}"
+        if args.use_or:
+            policy_name = f"cql-or-{parameters['number_of_agents']}-agents-{args.data_n_eps}eps-bs{parameters['batch_size']}"
+        else:
+            policy_name = f"cql-{parameters['number_of_agents']}-agents-{args.data_n_eps}eps-bs{parameters['batch_size']}"
     policy_path = f"./policy/{policy_name}"
 
     policy = discrete_CQL.MultiAgentDiscreteCQL(
@@ -307,8 +313,12 @@ if __name__ == "__main__":
         print("Start Global-CQL training for flatland TreeLSTM.")
         mode = "cqlGlobal"
     else:
-        print("Start CQL training for flatland TreeLSTM.")
-        mode = "CQL"
+        if args.use_or:
+            print("Start CQL training for flatland TreeLSTM with OR-Solution Dataset.")
+            mode = "CQL-OR"
+        else:
+            print("Start CQL training for flatland TreeLSTM.")
+            mode = "CQL"
     print("Training Details:")
     print(f"Batch Size: {parameters['batch_size']}")
     print(f"Number of agents: {parameters['number_of_agents']}")
