@@ -41,11 +41,15 @@ def train_CQL(replay_buffer, data_file, num_actions, args, parameters):
     if args.normal_reward:
         if args.use_or:
             policy_name = f"cql-or-{parameters['number_of_agents']}-agents-{args.data_n_eps}eps-normReward-bs{parameters['batch_size']}"
+        elif args.use_mix:
+            policy_name = f"cql-mix-{parameters['number_of_agents']}-agents-normReward-bs{parameters['batch_size']}"
         else:
             policy_name = f"cql-{parameters['number_of_agents']}-agents-{args.data_n_eps}eps-normReward-bs{parameters['batch_size']}"
     else:
         if args.use_or:
             policy_name = f"cql-or-{parameters['number_of_agents']}-agents-{args.data_n_eps}eps-bs{parameters['batch_size']}"
+        elif args.use_mix:
+            policy_name = f"cql-mix-{parameters['number_of_agents']}-agents-bs{parameters['batch_size']}"
         else:
             policy_name = f"cql-{parameters['number_of_agents']}-agents-{args.data_n_eps}eps-bs{parameters['batch_size']}"
     policy_path = f"./policy/{policy_name}"
@@ -261,6 +265,7 @@ if __name__ == "__main__":
     parser.add_argument("--use_or", "-or", action="store_true", help="Train with or-solution dataset.")
     parser.add_argument("--n_agents", default=5, type=int, help="Number of agents for training.")
     parser.add_argument("--batch_size", "-bs", default=128, type=int, help="Training batch size.")
+    parser.add_argument("--use_mix", "-mix", action="store_true", help="Use mixed dataset for training.")
 
     args = parser.parse_args()
 
@@ -303,6 +308,8 @@ if __name__ == "__main__":
             data_file = f"orData_agent_{n_agents}_normR/or_data_{n_agents}_agents_{n_eps}_episodes.pkl"
         else:
             data_file = f"orData_agent_{n_agents}/or_data_{n_agents}_agents_{n_eps}_episodes.pkl"
+    elif args.use_mix:
+        data_file = f'mixData/merged_{n_agents}_agents.pkl'
     else:
         if args.normal_reward:
             data_file = f"offlineData/offline_rl_data_treeLSTM_{parameters['number_of_agents']}_agents_{args.data_n_eps}_episodes_normR.pkl"
@@ -318,6 +325,9 @@ if __name__ == "__main__":
         if args.use_or:
             print("Start CQL training for flatland TreeLSTM with OR-Solution Dataset.")
             mode = "CQL-OR"
+        elif args.use_mix:
+            print("Start CQL training for flatland TreeLSTM with OR-RL Mixed Dataset.")
+            mode = "CQL-MIX"
         else:
             print("Start CQL training for flatland TreeLSTM.")
             mode = "CQL"
