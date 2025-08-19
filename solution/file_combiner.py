@@ -10,7 +10,7 @@ collect_data_path_name = f"offline_rl_data_treeLSTM_{n_agents}_agents_{NUM_EPISO
 FILE_A = f"orData_agent_{n_agents}_normR/or_data_{n_agents}_agents_{n_eps}_episodes.pkl"
 FILE_B = f"offlineData/{collect_data_path_name}_normR.pkl"
 
-merged_file = f'mixData/merged_{n_agents}_agents_{n_eps+NUM_EPISODES}_episodes.pkl'
+merged_file = f'mixData/merged_{n_agents}_agents.pkl'
 
 if not os.path.exists("./mixData"):
         os.makedirs("./mixData")
