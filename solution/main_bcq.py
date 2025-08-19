@@ -195,11 +195,13 @@ if __name__ == "__main__":
     parser.add_argument("--normal_reward", action="store_true", help="Use dataset with normed_rewards for agent")
     parser.add_argument("--use_or", "-or", action="store_true", help="Train with or-solution dataset.")
     parser.add_argument("--n_agents", default=5, type=int, help="Number of agents for training.")
+    parser.add_argument("--batch_size", "-bs", default=128, type=int, help="Training batch size.")
 
     args = parser.parse_args()
 
     n_agents = args.n_agents
     n_eps = args.data_n_eps
+    batch_size = args.batch_size
 
     flatland_parameters = {
 		# Evaluation
@@ -208,7 +210,7 @@ if __name__ == "__main__":
 		# Learning
 		# "discount": 0.99,
 		# "buffer_size": 1e6,
-		"batch_size": 256,   # default setting - 128
+		"batch_size": batch_size,   # default setting - 128
 		# "optimizer": "Adam",
 		# "optimizer_parameters": {
 		# 	"lr": 1e-4,   # 0.0000625
