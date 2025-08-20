@@ -50,14 +50,14 @@ def rebuild_wrapped_env_from_data(data):
         number_of_agents=env_params["number_of_agents"],
         rail_generator=custom_rail_generator,
         line_generator=custom_line_generator,
-        malfunction_generator=None,
-        # malfunction_generator=ParamMalfunctionGen(
-        #     MalfunctionParameters(
-        #         malfunction_rate=env_params['malfunction_rate'],
-        #         min_duration=env_params['min_duration'],
-        #         max_duration=env_params['max_duration']
-        #     )
-        # ),
+        # malfunction_generator=None,
+        malfunction_generator=ParamMalfunctionGen(
+            MalfunctionParameters(
+                malfunction_rate=env_params['malfunction_rate'],
+                min_duration=env_params['min_duration'],
+                max_duration=env_params['max_duration']
+            )
+        ),
         obs_builder_object=TreeCutils(fp.num_tree_obs_nodes, fp.tree_pred_path_depth),
         remove_agents_at_target=True,
         random_seed=seed
