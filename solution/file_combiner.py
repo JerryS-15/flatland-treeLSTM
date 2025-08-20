@@ -1,4 +1,5 @@
-import pickle
+# import pickle
+import dill as pickle
 import os
 
 n_agents = 10
