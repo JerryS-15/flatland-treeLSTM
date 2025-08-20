@@ -1,7 +1,7 @@
 import pickle
 import os
 
-n_agents = 5
+n_agents = 10
 n_eps = 1000
 
 NUM_EPISODES = 1000
