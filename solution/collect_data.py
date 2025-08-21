@@ -17,18 +17,21 @@ from flatland_cutils import TreeObsForRailEnv as TreeCutils
 from eval_env import LocalTestEnvWrapper
 from impl_config import FeatureParserConfig as fp
 from plfActor import Actor
+from noisyActor import NoisyActor
 from utils import VideoWriter, debug_show
 
 import os
 import copy
 import pandas as pd
+import random
 
-N_AGENTS = 10
+N_AGENTS = 5
 WIDTH = 30
 HEIGHT = 35
-NUM_EPISODES = 2000
+NUM_EPISODES = 1000
 MAX_TIMESTEPS = 5000
 collect_data_path_name = f"offline_rl_data_treeLSTM_{N_AGENTS}_agents_{NUM_EPISODES}_episodes"
+EPSILON = 0.5
 
 def create_random_env():
     return RailEnv(
@@ -92,6 +95,8 @@ def get_args():
     parser.add_argument("--save-video", "-s", default=None, help="path to save video")
     parser.add_argument("--episodes", type=int, default=NUM_EPISODES, help="number of episodes when collecting data")
     parser.add_argument("--norm-rewards", "-nr", action="store_true", help="if collect norm rewards for agent")
+    parser.add_argument("--use-noise", "-noise", action="store_true", help="if collect sub-optimal dataset, usually for combined usage with OR-Solution data.")
+    parser.add_argument("--epsilon", type=float, default=EPSILON, help="epsilon greedy for sub-optimal dataset collection.")
     # parser.add_argument("--n_agents", type=int, default=10, help="number of agents in the environment")
     args = parser.parse_args()
     return args
@@ -102,6 +107,13 @@ if __name__ == "__main__":
 
     if args.norm_rewards:
         print("Use norm reward for data collection.")
+    
+    if args.use_noise:
+        print(f"Collect sub-optimal dataset with epsilon greedy, epsilon={args.epsilon}.")
+        collect_data_path_name = f"{collect_data_path_name}_noisy"
+        mode = "noisy"
+    else:
+        mode = "RL"
 
     print("---------------------------------------")
     print(f"Data Collection Started for {N_AGENTS} agents, {args.episodes} episodes.")
@@ -113,7 +125,7 @@ if __name__ == "__main__":
     print("Starting wandb, view at https://wandb.ai/")
     wandb.init(
 		project='flatland-TreeLSTM', 
-		name=f"DATASET_{N_AGENTS}agents_{NUM_EPISODES}eps_{time.strftime('%m%d%H%M%S')}"
+		name=f"DATASET_{N_AGENTS}agents_{NUM_EPISODES}eps_{mode}_{time.strftime('%m%d%H%M%S')}"
 	)
 
     # create env
@@ -130,7 +142,11 @@ if __name__ == "__main__":
         model_path = get_model_path(n_agents)
     else:
         model_path = args.model
-    actor = Actor(model_path)
+    
+    if args.use_noise:
+        actor = NoisyActor(model_path, epsilon=args.epsilon)
+    else:
+        actor = Actor(model_path)
     print(f"Load actor from {model_path}")
 
     if args.norm_rewards:
