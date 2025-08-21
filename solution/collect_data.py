@@ -122,6 +122,9 @@ if __name__ == "__main__":
     if not os.path.exists("./offlineData"):
         os.makedirs("./offlineData")
 
+    if not os.path.exists(f"./offlineData_{N_AGENTS}"):
+        os.makedirs(f"./offlineData_{N_AGENTS}")
+
     print("Starting wandb, view at https://wandb.ai/")
     wandb.init(
 		project='flatland-TreeLSTM', 
@@ -224,6 +227,11 @@ if __name__ == "__main__":
         all_offline_data.extend(episode_data)
         dataset_info.extend(info_data)
 
+        eps_save_path = f"offlineData_{N_AGENTS}/data_{episode+1}.pkl"
+        with open(eps_save_path, "wb") as f:
+            for transition in all_offline_data:
+                pickle.dump(transition, f)
+
         # for d in episode_data:
         #     print(f"COLLECTED | done:", d[4]) 
 
@@ -233,7 +241,9 @@ if __name__ == "__main__":
     # print("-----------------------------------")
     
     with open(save_path, "wb") as f:
-        pickle.dump(all_offline_data, f)
+        for transition in all_offline_data:
+                pickle.dump(transition, f)
+        # pickle.dump(all_offline_data, f)
         # pickle.dump(episode_data, f)
     print("Offline RL data is saved at ", save_path)
 
