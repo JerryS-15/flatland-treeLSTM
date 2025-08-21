@@ -21,22 +21,6 @@ class ReplayBuffer:
         if len(self.buffer) >= self.buffer_size:
             self.buffer.pop(0)
         self.buffer.append((obs, action, reward, next_obs, done))
-
-    # def sample(self, batch_size):
-    #     batch = random.sample(self.buffer, batch_size)
-    #     state, action, reward, next_state, done = zip(*batch)
-
-    #     action = np.array([list(a.values()) for a in action], dtype=np.int64)
-    #     reward = np.array([list(r.values()) for r in reward], dtype=np.int64)
-    #     done = np.array([list(d.values())[:50] for d in done], dtype=np.float32)
-
-    #     return (
-    #         torch.FloatTensor(np.array(state)),
-    #         torch.LongTensor(action),
-    #         torch.FloatTensor(reward),
-    #         torch.FloatTensor(np.array(next_state)),
-    #         torch.FloatTensor(done)
-    #     )
     
     def sample(self, batch_size):
         batch = random.sample(self.buffer, batch_size)
@@ -83,23 +67,23 @@ class ReplayBuffer:
             "next_edge_order": torch.FloatTensor(next_edge_order),
         }
 
-    def load_from_file(self, file_path):
-        with open(file_path, 'rb') as f:
-            raw_data = pickle.load(f)
-        for transition in raw_data:
-            self.add(transition)
+    def load_from_file(self, file_paths):
+        if isinstance(file_paths, str):
+            file_paths = [file_paths]
+
+        for file_path in file_paths:
+            with open(file_path, 'rb') as f:
+                raw_data = pickle.load(f)
+            for transition in raw_data:
+                self.add(transition)
+
+        # with open(file_path, 'rb') as f:
+        #     raw_data = pickle.load(f)
+        # for transition in raw_data:
+        #     self.add(transition)
+
         # for file_path in file_paths:
         #     with open(file_path, 'rb') as f:
         #         raw_data = pickle.load(f)
         #     for transition in raw_data:
         #         self.add(transition)
-
-
-# def parse_dataset_file(file_path, device):
-#     with open(file_path, 'rb') as f:
-#         data = pickle.load(f)
-
-#     parsed_data = []
-
-#     for item in data:
-
