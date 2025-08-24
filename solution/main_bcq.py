@@ -244,7 +244,10 @@ if __name__ == "__main__":
         else:
             data_file = f"orData_agent_{n_agents}/or_data_{n_agents}_agents_{n_eps}_episodes.pkl"
     elif args.use_mix:
-        data_file = f'mixData/merged_{n_agents}_agents.pkl'
+        data_file = []
+        data_file.append(f"orData_agent_{n_agents}_normR/or_data_{n_agents}_agents_{n_eps}_episodes.pkl")
+        data_file.append(f"offlineData/offline_rl_data_treeLSTM_{parameters['number_of_agents']}_agents_{args.data_n_eps}_episodes_normR.pkl")
+        # data_file = f'mixData/merged_{n_agents}_agents.pkl'
     else:
         if args.normal_reward:
             data_file = f"offlineData/offline_rl_data_treeLSTM_{parameters['number_of_agents']}_agents_{args.data_n_eps}_episodes_normR.pkl"
