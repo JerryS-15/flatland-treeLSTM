@@ -189,6 +189,13 @@ def eval_policy(model_path, env_params, seed, eval_episodes=10):
 
     return avg_norm_reward
 
+def collect_pickle_paths(folder):
+    return [
+        os.path.join(folder, f)
+        for f in os.listdir(folder)
+        if f.endswith(".pkl")
+    ]
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
@@ -244,9 +251,12 @@ if __name__ == "__main__":
         else:
             data_file = f"orData_agent_{n_agents}/or_data_{n_agents}_agents_{n_eps}_episodes.pkl"
     elif args.use_mix:
-        data_file = []
-        data_file.append(f"orData_agent_{n_agents}_normR/or_data_{n_agents}_agents_{n_eps}_episodes.pkl")
-        data_file.append(f"offlineData/offline_rl_data_treeLSTM_{parameters['number_of_agents']}_agents_{args.data_n_eps}_episodes_normR.pkl")
+        # data_file = []
+        # data_file.append(f"orData_agent_{n_agents}_normR/or_data_{n_agents}_agents_{n_eps}_episodes.pkl")
+        # data_file.append(f"offlineData/offline_rl_data_treeLSTM_{parameters['number_of_agents']}_agents_{args.data_n_eps}_episodes_normR.pkl")
+        data_folder1 = f"./orData_agent_{n_agents}_normR"
+        data_folder2 = f"./offlineData_{n_agents}"
+        data_file = collect_pickle_paths(data_folder1) + collect_pickle_paths(data_folder2)
         # data_file = f'mixData/merged_{n_agents}_agents.pkl'
     else:
         if args.normal_reward:
@@ -269,7 +279,10 @@ if __name__ == "__main__":
     print(f"Batch Size: {parameters['batch_size']}")
     print(f"Number of agents: {parameters['number_of_agents']}")
     print(f"Dataset episodes: {args.data_n_eps}")
-    print(f"Dataset file: {data_file}")
+    if args.use_mix:
+        print(f"Dataset folder: {data_folder1} & {data_folder2}")
+    else:
+        print(f"Dataset file: {data_file}")
     print("---------------------------------------")
 
     if not os.path.exists("./results"):
