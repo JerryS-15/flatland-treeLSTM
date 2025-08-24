@@ -6,7 +6,7 @@ import torch
 import numpy as np
 
 class StreamingReplayDataset(Dataset):
-    def __init__(self, data_sources, cache_size=5):
+    def __init__(self, data_sources, cache_size=50):
         """
         data_sources: str, list of folders, or list of file paths
         cache_size: maximum number of recently visited .pkl files

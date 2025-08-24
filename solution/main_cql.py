@@ -69,7 +69,7 @@ def train_CQL(replay_buffer, data_file, num_actions, args, parameters):
             shuffle=True,
             num_workers=4,
             collate_fn=collate_transitions,
-            drop_last=True
+            pin_memory=True
         )
         print(f"Loaded mixed dataset with {len(dataset)} transitions.")
     else:
