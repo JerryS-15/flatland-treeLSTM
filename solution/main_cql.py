@@ -62,7 +62,7 @@ def train_CQL(replay_buffer, data_file, num_actions, args, parameters):
     )
 
     if args.use_mix:
-        dataset = StreamingReplayDataset(data_file, transform=None)
+        dataset = StreamingReplayDataset(data_file)
         dataloader = DataLoader(
             dataset,
             batch_size=parameters["batch_size"],
@@ -96,7 +96,7 @@ def train_CQL(replay_buffer, data_file, num_actions, args, parameters):
                     batch = next(loader_iter)
             else:
                 batch = replay_buffer.sample(parameters["batch_size"])
-                
+
             metrics = policy.train(batch)
             epoch_metrics.append(metrics)
             if ep % 1000 == 0:
@@ -368,7 +368,10 @@ if __name__ == "__main__":
     print(f"Batch Size: {parameters['batch_size']}")
     print(f"Number of agents: {parameters['number_of_agents']}")
     print(f"Dataset episodes: {args.data_n_eps}")
-    print(f"Dataset file: {data_file}")
+    if args.use_mix:
+        print(f"Dataset folder: {data_folder1} & {data_folder2}")
+    else:
+        print(f"Dataset file: {data_file}")
     print("---------------------------------------")
 
     if not os.path.exists("./results"):
