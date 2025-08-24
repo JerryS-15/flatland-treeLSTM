@@ -5,36 +5,23 @@ import torch
 import numpy as np
 
 class StreamingReplayDataset(Dataset):
-    def __init__(self, data_dirs):
-        if isinstance(data_dirs, str):
-            data_dirs = [data_dirs]
-
-        self.data_paths = []
-        for data_dir in data_dirs:
-            for fname in sorted(os.listdir(data_dir)):
-                if fname.endswith('.pkl'):
-                    self.data_paths.append(os.path.join(data_dir, fname))
-
+    def __init__(self, data_paths):
+        self.data_paths = data_paths
         self.index_map = []
-        self.file_lengths = []
+        self.episodes = []
 
-        for file_idx, path in enumerate(self.data_paths):
+        for ep_idx, path in enumerate(self.data_paths):
             with open(path, 'rb') as f:
                 episode = pickle.load(f)
-                length = len(episode)
-                self.file_lengths.append(length)
-                self.index_map.extend([(file_idx, i) for i in range(length)])
+                self.episodes.append(episode)
+                self.index_map.extend([(ep_idx, s_idx) for s_idx in range(len(episode))])
 
     def __len__(self):
         return len(self.index_map)
 
     def __getitem__(self, idx):
-        file_idx, step_idx = self.index_map[idx]
-        path = self.data_paths[file_idx]
-
-        with open(path, 'rb') as f:
-            episode = pickle.load(f)
-        return episode[step_idx]
+        ep_idx, step_idx = self.index_map[idx]
+        return self.episodes[ep_idx][step_idx]
 
 
 def collate_transitions(batch):
