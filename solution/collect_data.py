@@ -3,6 +3,7 @@ from argparse import ArgumentParser
 from time import sleep
 import wandb
 import time
+from tqdm import tqdm
 
 from flatland.envs.line_generators import SparseLineGen
 from flatland.envs.malfunction_generators import (
@@ -73,18 +74,6 @@ def get_args():
         description="A multi-agent reinforcement learning solution to flatland3."
     )
     parser.add_argument(
-        "--nr",
-        "--no-render",
-        dest="render",
-        action="store_const",
-        const=False,
-        default=False,
-        help="do not display game window",
-    )
-    parser.add_argument(
-        "--fps", type=float, default=30, help="frames per second (default 10)"
-    )
-    parser.add_argument(
         "--model",
         default=None,
         help="the checkpoint file of saved model. If not given, a proper model is chosen according to number of agents.",
@@ -92,7 +81,6 @@ def get_args():
     parser.add_argument(
         "--env", default=None, help="path to saved '*.pkl' file of envs"
     )
-    parser.add_argument("--save-video", "-s", default=None, help="path to save video")
     parser.add_argument("--episodes", type=int, default=NUM_EPISODES, help="number of episodes when collecting data")
     parser.add_argument("--norm-rewards", "-nr", action="store_true", help="if collect norm rewards for agent")
     parser.add_argument("--use-noise", "-noise", action="store_true", help="if collect sub-optimal dataset, usually for combined usage with OR-Solution data.")
@@ -148,24 +136,22 @@ if __name__ == "__main__":
     
     if args.use_noise:
         actor = NoisyActor(model_path, epsilon=args.epsilon)
+        print(f"Use Noisy Actor.")
     else:
         actor = Actor(model_path)
+        print(f"Use Normal Actor.")
     print(f"Load actor from {model_path}")
 
     if args.norm_rewards:
-        save_path = f"offlineData/{collect_data_path_name}_normR.pkl"
+        all_save_path = f"offlineData/{collect_data_path_name}_normR.pkl"
     else:
-        save_path = f"offlineData/{collect_data_path_name}.pkl"
-
-    # create video writer
-    if args.save_video is not None:
-        video_writer = VideoWriter(args.save_video, args.fps)
+        all_save_path = f"offlineData/{collect_data_path_name}.pkl"
 
     # initialize data storage
     all_offline_data = []
     dataset_info = []
 
-    for episode in range(args.episodes):
+    for episode in tqdm(range(args.episodes), desc="Collect RL dataset"):
         print(f"Episode {episode + 1}/{args.episodes}")
         obs = env_wrapper.reset()
         step_count = 0
@@ -191,14 +177,6 @@ if __name__ == "__main__":
                 done_dict,
             ))
             obs = next_obs
-
-            if args.render:
-                debug_show(env_wrapper.env)
-                sleep(1 / args.fps)
-
-            if args.save_video is not None:
-                frame = debug_show(env_wrapper.env, mode="rgb_array")
-                video_writer.write(frame)
 
             if done["__all__"]:
                 arrival_ratio, total_reward, norm_reward, agent_norm_reward = env_wrapper.final_metric()
@@ -229,23 +207,13 @@ if __name__ == "__main__":
 
         eps_save_path = f"offlineData_{N_AGENTS}/data_{episode+1}.pkl"
         with open(eps_save_path, "wb") as f:
-            for transition in all_offline_data:
-                pickle.dump(transition, f)
-
-        # for d in episode_data:
-        #     print(f"COLLECTED | done:", d[4]) 
-
-    # print("--------------done-----------------")
-    # for d in all_offline_data:
-    #     print(d[4])
-    # print("-----------------------------------")
+            pickle.dump(episode_data, f)
     
-    with open(save_path, "wb") as f:
-        for transition in all_offline_data:
-                pickle.dump(transition, f)
+    with open(all_save_path, "wb") as f:
+        pickle.dump(all_offline_data, f)
         # pickle.dump(all_offline_data, f)
         # pickle.dump(episode_data, f)
-    print("Offline RL data is saved at ", save_path)
+    print("✅ Offline RL data is saved at ", all_save_path)
 
     if args.norm_rewards:
         dataset_info_path = f"offlineData/INFO-{collect_data_path_name}_normR.csv"
@@ -256,62 +224,3 @@ if __name__ == "__main__":
     ])  
     df_info.to_csv(dataset_info_path, index=False)
     print("Dataset INFO documented at ", dataset_info_path)
-
-    # # start step loop
-    # obs = env_wrapper.reset()
-    # step_count = 0
-    
-    # while step_count < MAX_TIMESTEPS:
-    #     step_count += 1
-    #     va = env_wrapper.get_valid_actions() # Valid actions
-    #     action = actor.get_actions(obs, va, n_agents)
-    #     next_obs, all_rewards, done = env_wrapper.step(action)
-
-    #     offline_data.append((
-    #         obs,
-    #         action,
-    #         all_rewards,
-    #         next_obs,
-    #         done,
-    #     ))
-    #     # record action of each agent
-    #     # for agent_id in range(n_agents):
-    #     #     offline_data.append((
-    #     #         obs,          # observation
-    #     #         action[agent_id],       # action
-    #     #         all_rewards[agent_id],  # rewards
-    #     #         next_obs,     # next observation
-    #     #         done[agent_id],         # done (if terminate)
-    #     #     ))
-    #     obs = next_obs
-
-    #     # print(f"[Step {step_count}] Agents: {n_agents}, Obs Shape: {len(obs)}, Valid Actions Shape: {len(va)}")
-
-    #     # rendering
-    #     if args.render:
-    #         debug_show(env_wrapper.env)
-    #         sleep(1 / args.fps)
-
-    #     if args.save_video is not None:
-    #         frame = debug_show(env_wrapper.env, mode="rgb_array")
-    #         video_writer.write(frame)
-
-    #     if done["__all__"]:
-    #         if args.save_video is not None:
-    #             video_writer.close()
-    #             print(f"Write video to {args.save_video}")
-
-    #         arrival_ratio, total_reward, norm_reward = env_wrapper.final_metric()
-    #         print(f"TOTAL_REW: {total_reward}")
-    #         print(f"NORM_REW: {norm_reward:.4f}")
-    #         print(f"ARR_RATIO: {arrival_ratio*100:.2f}%")
-
-    #         # save collected data
-    #         save_path = "offline_rl_data_2003.pkl"
-
-    #         with open(save_path, "wb") as f:
-    #             print("Final data: ", type(offline_data), len(offline_data))
-    #             pickle.dump(offline_data, f)
-    #         print("Offline RL data is saved at ", save_path)
-            
-    #         break
