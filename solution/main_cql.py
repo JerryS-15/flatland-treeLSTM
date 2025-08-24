@@ -7,6 +7,8 @@ from time import sleep
 
 import numpy as np
 import torch
+from torch.utils.data import DataLoader
+from streamingBuffer import StreamingReplayDataset, collate_transitions
 
 import utils
 import wandb
@@ -59,8 +61,20 @@ def train_CQL(replay_buffer, data_file, num_actions, args, parameters):
         device=device
     )
 
-    replay_buffer.load_from_file(data_file)
-    print(f"Loaded {len(replay_buffer.buffer)} transitions.")
+    if args.use_mix:
+        dataset = StreamingReplayDataset(data_file, transform=None)
+        dataloader = DataLoader(
+            dataset,
+            batch_size=parameters["batch_size"],
+            shuffle=True,
+            num_workers=4,
+            collate_fn=collate_transitions,
+            drop_last=True
+        )
+        print(f"Loaded mixed dataset with {len(dataset)} transitions.")
+    else:
+        replay_buffer.load_from_file(data_file)
+        print(f"Loaded single dataset with {len(replay_buffer.buffer)} transitions.")
 	
     evaluations = []
     training_iters = 0
@@ -69,9 +83,20 @@ def train_CQL(replay_buffer, data_file, num_actions, args, parameters):
 
     while training_iters < args.max_timesteps:
         epoch_metrics = []
+        if args.use_mix:
+            loader_iter = iter(dataloader)
+
         for ep in tqdm(range(int(parameters["eval_freq"])), desc="CQL Training Progress"):
         # for _ in range(int(parameters["eval_freq"])):
-            batch = replay_buffer.sample(parameters["batch_size"])
+            if args.use_mix:
+                try:
+                    batch = next(loader_iter)
+                except StopIteration:
+                    loader_iter = iter(dataloader)
+                    batch = next(loader_iter)
+            else:
+                batch = replay_buffer.sample(parameters["batch_size"])
+                
             metrics = policy.train(batch)
             epoch_metrics.append(metrics)
             if ep % 1000 == 0:
@@ -251,6 +276,12 @@ def eval_policy(model_path, env_params, seed, eval_episodes=10, isGlobal=False):
 
     return avg_norm_reward
 
+def collect_pickle_paths(folder):
+    return [
+        os.path.join(folder, f)
+        for f in os.listdir(folder)
+        if f.endswith(".pkl")
+    ]
 
 if __name__ == "__main__":
 
@@ -309,9 +340,9 @@ if __name__ == "__main__":
         else:
             data_file = f"orData_agent_{n_agents}/or_data_{n_agents}_agents_{n_eps}_episodes.pkl"
     elif args.use_mix:
-        data_file = []
-        data_file.append(f"orData_agent_{n_agents}_normR/or_data_{n_agents}_agents_{n_eps}_episodes.pkl")
-        data_file.append(f"offlineData/offline_rl_data_treeLSTM_{parameters['number_of_agents']}_agents_{args.data_n_eps}_episodes_normR.pkl")
+        data_folder1 = f"./orData_agent_{n_agents}_normR"
+        data_folder2 = f"./offlineData_{n_agents}"
+        data_file = collect_pickle_paths(data_folder1) + collect_pickle_paths(data_folder2)
     else:
         if args.normal_reward:
             data_file = f"offlineData/offline_rl_data_treeLSTM_{parameters['number_of_agents']}_agents_{args.data_n_eps}_episodes_normR.pkl"
