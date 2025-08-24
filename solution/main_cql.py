@@ -62,16 +62,18 @@ def train_CQL(replay_buffer, data_file, num_actions, args, parameters):
     )
 
     if args.use_mix:
-        dataset = StreamingReplayDataset(data_file)
-        dataloader = DataLoader(
-            dataset,
-            batch_size=parameters["batch_size"],
-            shuffle=True,
-            num_workers=4,
-            collate_fn=collate_transitions,
-            pin_memory=True
-        )
-        print(f"Loaded mixed dataset with {len(dataset)} transitions.")
+        # dataset = StreamingReplayDataset(data_file)
+        # dataloader = DataLoader(
+        #     dataset,
+        #     batch_size=parameters["batch_size"],
+        #     shuffle=True,
+        #     num_workers=4,
+        #     collate_fn=collate_transitions,
+        #     pin_memory=True
+        # )
+        # print(f"Loaded mixed dataset with {len(dataset)} transitions.")
+        replay_buffer.load_from_file(data_file)
+        print(f"Loaded mixed dataset with {len(replay_buffer.buffer)} transitions.")
     else:
         replay_buffer.load_from_file(data_file)
         print(f"Loaded single dataset with {len(replay_buffer.buffer)} transitions.")
@@ -83,19 +85,21 @@ def train_CQL(replay_buffer, data_file, num_actions, args, parameters):
 
     while training_iters < args.max_timesteps:
         epoch_metrics = []
-        if args.use_mix:
-            loader_iter = iter(dataloader)
+        # if args.use_mix:
+        #     loader_iter = iter(dataloader)
 
         for ep in tqdm(range(int(parameters["eval_freq"])), desc="CQL Training Progress"):
         # for _ in range(int(parameters["eval_freq"])):
-            if args.use_mix:
-                try:
-                    batch = next(loader_iter)
-                except StopIteration:
-                    loader_iter = iter(dataloader)
-                    batch = next(loader_iter)
-            else:
-                batch = replay_buffer.sample(parameters["batch_size"])
+            # if args.use_mix:
+            #     try:
+            #         batch = next(loader_iter)
+            #     except StopIteration:
+            #         loader_iter = iter(dataloader)
+            #         batch = next(loader_iter)
+            # else:
+            #     batch = replay_buffer.sample(parameters["batch_size"])
+            
+            batch = replay_buffer.sample(parameters["batch_size"])
 
             metrics = policy.train(batch)
             epoch_metrics.append(metrics)
