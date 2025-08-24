@@ -5,7 +5,7 @@ import os
 import random
     
 class ReplayBuffer:
-    def __init__(self, buffer_size=100000):
+    def __init__(self, buffer_size=500000):
         self.buffer = []
         self.buffer_size = buffer_size
 
