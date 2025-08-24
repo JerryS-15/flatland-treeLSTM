@@ -1,27 +1,80 @@
 import os
 import pickle
 from torch.utils.data import Dataset
+from collections import OrderedDict
 import torch
 import numpy as np
 
 class StreamingReplayDataset(Dataset):
-    def __init__(self, data_paths):
-        self.data_paths = data_paths
-        self.index_map = []
-        self.episodes = []
+    def __init__(self, data_sources, cache_size=5):
+        """
+        data_sources: str, list of folders, or list of file paths
+        cache_size: maximum number of recently visited .pkl files
+        """
+        if isinstance(data_sources, str):
+            data_sources = [data_sources]
 
-        for ep_idx, path in enumerate(self.data_paths):
+        # Construct all .pkl dataset paths
+        self.data_paths = []
+        for src in data_sources:
+            if os.path.isdir(src):
+                for fname in sorted(os.listdir(src)):
+                    if fname.endswith(".pkl"):
+                        self.data_paths.append(os.path.join(src, fname))
+            elif os.path.isfile(src):
+                self.data_paths.append(src)
+            else:
+                raise ValueError(f"Invalid data source: {src}")
+
+        # Construct map: (file_idx, step_idx)
+        self.index_map = []
+        self.file_lengths = []
+        for file_idx, path in enumerate(self.data_paths):
             with open(path, 'rb') as f:
                 episode = pickle.load(f)
-                self.episodes.append(episode)
-                self.index_map.extend([(ep_idx, s_idx) for s_idx in range(len(episode))])
+                length = len(episode)
+                self.file_lengths.append(length)
+                self.index_map.extend([(file_idx, i) for i in range(length)])
+
+        # LRU cache，save the data that recently visited
+        self.cache = OrderedDict()
+        self.cache_size = cache_size
+
+        # self.data_paths = data_paths
+        # self.index_map = []
+        # self.episodes = []
+
+        # for ep_idx, path in enumerate(self.data_paths):
+        #     with open(path, 'rb') as f:
+        #         episode = pickle.load(f)
+        #         self.episodes.append(episode)
+        #         self.index_map.extend([(ep_idx, s_idx) for s_idx in range(len(episode))])
 
     def __len__(self):
         return len(self.index_map)
 
     def __getitem__(self, idx):
-        ep_idx, step_idx = self.index_map[idx]
-        return self.episodes[ep_idx][step_idx]
+        # ep_idx, step_idx = self.index_map[idx]
+        # return self.episodes[ep_idx][step_idx]
+        file_idx, step_idx = self.index_map[idx]
+        path = self.data_paths[file_idx]
+
+        # Read from cache
+        if file_idx in self.cache:
+            episode = self.cache[file_idx]
+            # Move to end, as recently been used
+            self.cache.move_to_end(file_idx)
+        else:
+            # Not in cache, read from file
+            with open(path, 'rb') as f:
+                episode = pickle.load(f)
+            # Add to cache
+            self.cache[file_idx] = episode
+            if len(self.cache) > self.cache_size:
+                # Pop out longtime not used files
+                self.cache.popitem(last=False)
+
+        return episode[step_idx]
 
 
 def collate_transitions(batch):
