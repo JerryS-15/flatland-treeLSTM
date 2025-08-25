@@ -71,6 +71,17 @@ def get_or_actions(step):
     action_data = load_env_data(action_path)
     return action_data[step]
 
+def get_model_path(n_agents):
+    if n_agents <= 50:
+        model_path = "policy/phase-III-50.pt"
+    elif n_agents <= 80:
+        model_path = "policy/phase-III-80.pt"
+    elif n_agents <= 100:
+        model_path = "policy/phase-III-100.pt"
+    else:
+        model_path = "policy/phase-III-200.pt"
+    return model_path
+
 def inject_agent_states(env, agent_states, action_dict):
     """
     Sync agent states (from reproduction of v2.2.1) to current v3.0.15
@@ -165,6 +176,9 @@ if __name__ == "__main__":
     
         for agent in env_wrapper.env.agents:
             agent.earliest_departure = 0
+        
+        model_path = get_model_path(n_agents)
+        actor = Actor(model_path)
 
         default_actions = {handle: 0 for handle in range(env_wrapper.env.number_of_agents)}
 
@@ -179,6 +193,13 @@ if __name__ == "__main__":
                 agent_states = step_data[step]
                 inject_agent_states(env_wrapper.env, agent_states, action)
             # print(f"{step}: {action}")
+            valid_actions = env_wrapper.get_valid_actions()
+            model_actions = actor.get_actions(obs, valid_actions, env_wrapper.env.number_of_agents)
+            for agent_id in range(env_wrapper.env.number_of_agents):
+                if action[agent_id] not in valid_actions[agent_id]:
+                    # print(f" !!! Agent {agent_id} with invalid action {action[agent_id]}, take model action {model_actions[agent_id]} instead.")
+                    action[agent_id] = model_actions[agent_id]
+                    
             next_obs, all_rewards, done, step_rewards = env_wrapper.step(action)
             done_dict = done.copy()
 

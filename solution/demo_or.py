@@ -19,10 +19,10 @@ from flatland.utils.rendertools import RenderTool
 
 from test_env_rebuild import load_env_data, rebuild_env_from_data
 
-seed = 5
-env_path = f"or_solution_data/env_data_v2_{seed}.pkl"
-action_path = f"or_solution_data/action_data_v2_{seed}.pkl"
-step_path = f"or_solution_data/step_data_v2_{seed}.pkl"
+seed = 4
+env_path = f"or_solution_data_agent_5/env_data_v2_{seed}.pkl"
+action_path = f"or_solution_data_agent_5/action_data_v2_{seed}.pkl"
+step_path = f"or_solution_data_agent_5/step_data_v2_{seed}.pkl"
 
 def rebuild_wrapped_env_from_data(data):
     rail = data["rail"]
@@ -186,24 +186,43 @@ if __name__ == "__main__":
         print(f"Agent {i} earliest_departure: {agent.earliest_departure}")
         print(f"Agent {i} speed: {agent.speed_counter}")
 
-    if args.use_model:
-        n_agents = env_wrapper.env.number_of_agents
-        model_path = get_model_path(n_agents)
-        actor = Actor(model_path)
-        print(f"Load actor from {model_path}")
+    # if args.use_model:
+    n_agents = env_wrapper.env.number_of_agents
+    model_path = get_model_path(n_agents)
+    actor = Actor(model_path)
+    print(f"Load actor from {model_path}")
 
     default_actions = {handle: 0 for handle in range(env_wrapper.env.number_of_agents)}
 
     step = 0
     while True:
-        if step < 0:
-            action = default_actions
+        if args.use_model:
+            va = env_wrapper.get_valid_actions()
+            action = actor.get_actions(obs, va, n_agents)
+            obs, all_rewards, done, step_rewards = env_wrapper.step(action)
+            print(f"[Step {step}]")
+            print(f"RL actions: {action}")
         else:
-            action = get_or_actions(step)
-            agent_states = step_data[step]
-            inject_agent_states(env_wrapper.env, agent_states, action)
-        print(f"{step}: {action}")
-        obs, all_rewards, done, step_rewards = env_wrapper.step(action)
+            if step < 0:
+                action = default_actions
+            else:
+                action = get_or_actions(step)
+                agent_states = step_data[step]
+                inject_agent_states(env_wrapper.env, agent_states, action)
+        
+            print(f"[Step {step}]")
+            print(f"OR actions: {action}")
+        
+            # Check invalid actions:
+            valid_actions = env_wrapper.get_valid_actions()
+            model_actions = actor.get_actions(obs, valid_actions, env_wrapper.env.number_of_agents)
+            for agent_id in range(env_wrapper.env.number_of_agents):
+                if action[agent_id] not in valid_actions[agent_id]:
+                    print(f" !!! Agent {agent_id} with invalid action {action[agent_id]}, take model action {model_actions[agent_id]} instead.")
+                    action[agent_id] = model_actions[agent_id]
+
+            print(f"Take actions: {action}")
+            obs, all_rewards, done, step_rewards = env_wrapper.step(action)
 
         step = step + 1
 
