@@ -23,8 +23,9 @@ class NoisyActor:
         valid_actions = np.array(valid_actions)
         for i in range(n_agents):
             if np.random.rand() < self.epsilon:
+                all_valid = np.ones_like(valid_actions[i], dtype=bool)
                 # ε-greedy: choose random valid action
-                actions[i] = np.random.choice(valid_actions[i].nonzero()[0])
+                actions[i] = np.random.choice(all_valid.nonzero()[0])
             else:
                 if n_agents == 1:
                     actions[i] = self._choose_action(valid_actions[i, :], logits)
