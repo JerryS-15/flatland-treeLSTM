@@ -15,6 +15,7 @@ from eval_env import LocalTestEnvWrapper
 from impl_config import FeatureParserConfig as fp
 from plfActor import Actor
 from utils import VideoWriter, debug_show
+import numpy as np
 
 
 def create_random_env():
@@ -118,6 +119,10 @@ if __name__ == "__main__":
         # print("agent_attr[0]: ", obs[0]['agent_attr'][0])
         # print("node_order[0]: ", obs[0]['node_order'][0])
         # print("edge_order[0]: ", obs[0]['edge_order'][0])
+        # print(f"valid_actions: {obs[0]['valid_actions']}")
+        # for i in range(n_agents):
+        #     all_valid = np.ones_like(obs[0]['valid_actions'][i], dtype=bool)
+        #     print(f"all_valid: {all_valid}")
         # print(done)
 
         if args.render:
