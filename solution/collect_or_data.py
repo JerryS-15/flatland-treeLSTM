@@ -157,7 +157,7 @@ if __name__ == "__main__":
 
     all_offline_data = []
     dataset_info = []
-    all_save_path = f"{save_dir}/or_data_{n_agents}_agents_{n_eps}_episodes.pkl"
+    all_save_path = f"offlineData/or_data_{n_agents}_agents_{n_eps}_episodes.pkl"
 
     for i in tqdm(range(0, n_eps), desc="Collect OR dataset"):
         seed = seed_init + i
@@ -199,7 +199,7 @@ if __name__ == "__main__":
                 if action[agent_id] not in valid_actions[agent_id]:
                     # print(f" !!! Agent {agent_id} with invalid action {action[agent_id]}, take model action {model_actions[agent_id]} instead.")
                     action[agent_id] = model_actions[agent_id]
-                    
+
             next_obs, all_rewards, done, step_rewards = env_wrapper.step(action)
             done_dict = done.copy()
 
@@ -247,7 +247,7 @@ if __name__ == "__main__":
         pickle.dump(all_offline_data, f)
     print("✅ Offline RL data is saved at ", all_save_path)
 
-    dataset_info_path = f"{save_dir}/INFO-or_dataset.csv"
+    dataset_info_path = f"offlineData/INFO-or_data_{n_agents}_agents_{n_eps}_episodes.csv"
     df_info = pd.DataFrame(dataset_info, columns=[
         "episode", "total_reward", "norm_reward", "arrival_ratio", "num_samples_per_episode"
     ])  
