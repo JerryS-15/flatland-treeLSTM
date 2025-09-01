@@ -376,6 +376,8 @@ if __name__ == "__main__":
     print(f"Dataset episodes: {args.data_n_eps}")
     if args.use_mix:
         print(f"Dataset folder: {data_folder1} & {data_folder2}")
+    elif args.use_or:
+        print(f"Dataset folder: {or_folder}")
     else:
         print(f"Dataset file: {data_file}")
     print("---------------------------------------")

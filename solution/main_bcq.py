@@ -247,9 +247,11 @@ if __name__ == "__main__":
     num_actions = 5
     if args.use_or:
         if args.normal_reward:
-            data_file = f"orData_agent_{n_agents}_normR/or_data_{n_agents}_agents_{n_eps}_episodes.pkl"
+            or_folder = f"./orData_agent_{n_agents}_normR"
+            data_file = collect_pickle_paths(or_folder)
         else:
-            data_file = f"orData_agent_{n_agents}/or_data_{n_agents}_agents_{n_eps}_episodes.pkl"
+            or_folder = f"./orData_agent_{n_agents}"
+            data_file = collect_pickle_paths(or_folder)
     elif args.use_mix:
         # data_file = []
         # data_file.append(f"orData_agent_{n_agents}_normR/or_data_{n_agents}_agents_{n_eps}_episodes.pkl")
@@ -281,6 +283,8 @@ if __name__ == "__main__":
     print(f"Dataset episodes: {args.data_n_eps}")
     if args.use_mix:
         print(f"Dataset folder: {data_folder1} & {data_folder2}")
+    elif args.use_or:
+        print(f"Dataset folder: {or_folder}")
     else:
         print(f"Dataset file: {data_file}")
     print("---------------------------------------")
