@@ -29,7 +29,8 @@ class DecisionTransformer(nn.Module):
 
         # ---- Embedding layers for sequence ----
         self.embed_state = nn.Linear(state_dim, embed_dim)
-        self.embed_action = nn.Embedding(act_dim, embed_dim) if fp.action_discrete else nn.Linear(act_dim, embed_dim)
+        self.embed_action = nn.Embedding(act_dim, embed_dim)
+        # self.embed_action = nn.Embedding(act_dim, embed_dim) if fp.action_discrete else nn.Linear(act_dim, embed_dim)
         self.embed_rtg = nn.Linear(1, embed_dim)
         self.embed_timestep = nn.Embedding(max_timestep, embed_dim)
 
