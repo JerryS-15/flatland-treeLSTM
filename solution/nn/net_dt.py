@@ -63,8 +63,8 @@ class DecisionTransformer(nn.Module):
         # Flatten batch+time+agent for TreeLSTM
         forest = forest.view(B * T * N, fp.num_tree_obs_nodes, -1)
         adjacency = adjacency.view(B * T * N, -1, 2)
-        node_order = node_order.view(B * T * N, -1)
-        edge_order = edge_order.view(B * T * N, -1)
+        # node_order = node_order.view(B * T * N, -1)
+        # edge_order = edge_order.view(B * T * N, -1)
 
         tree_emb = self.tree_lstm(forest, adjacency, node_order, edge_order)  # [B*T*N, node_dim]
         tree_emb = tree_emb[:, 0, :]  # assume root is first node
