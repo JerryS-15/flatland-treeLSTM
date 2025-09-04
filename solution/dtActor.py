@@ -36,10 +36,10 @@ class Actor:
                 rtgs=dummy_rtgs,
                 timesteps=dummy_timesteps
             )
-            logits = logits[:, -1]  # [B, n_agents, num_actions] 只取当前时刻动作分布
+            logits = logits[:, -1, :, :]  # [B, n_agents, num_actions] 只取当前时刻动作分布
 
         logits = logits[0].cpu().numpy()  # [n_agents, num_actions]
-        valid_actions = np.array(valid_actions)
+        # valid_actions = np.array(valid_actions)
 
         actions = dict()
         for i in range(n_agents):

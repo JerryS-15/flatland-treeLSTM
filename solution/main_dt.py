@@ -19,39 +19,39 @@ from flatland_cutils import TreeObsForRailEnv as TreeCutils
 
 from eval_env import LocalTestEnvWrapper
 from impl_config import FeatureParserConfig as fp
-from replayBuffer import ReplayBuffer
+from replayBufferDT import ReplayBufferDT
 from dtActor import Actor  # optional for evaluation
 
 from discrete_DT import MultiAgentDecisionTransformer
 
 
-def add_dt_fields(batch, discount=1.0):
-    """
-        Add rtgs (return-to-go) to batch
+# def add_dt_fields(batch, discount=1.0):
+#     """
+#         Add rtgs (return-to-go) to batch
 
-        Input:
-        - batch: dict, with ['all_rewards', 'dones'] included
-                all_rewards: [B, T, N], dones: [B, T, N]
+#         Input:
+#         - batch: dict, with ['all_rewards', 'dones'] included
+#                 all_rewards: [B, T, N], dones: [B, T, N]
 
-        Return:
-        - batch with two additional keys:
-            - 'rtgs': same shape as rewards
-            - 'timesteps': shape [B, T]
-    """
-    rewards = batch['all_rewards']  # [B, T, N]
-    dones = batch['dones']          # [B, T, N]
-    B, T, N = rewards.shape
-    rtgs = torch.zeros_like(rewards)
-    timesteps = torch.arange(T).unsqueeze(0).expand(B, T)
-    for b in range(B):
-        for n in range(N):
-            R = 0.0
-            for t in reversed(range(T)):
-                R = rewards[b, t, n] + (1 - dones[b, t, n]) * discount * R
-                rtgs[b, t, n] = R
-    batch['rtgs'] = rtgs
-    batch['timesteps'] = timesteps
-    return batch
+#         Return:
+#         - batch with two additional keys:
+#             - 'rtgs': same shape as rewards
+#             - 'timesteps': shape [B, T]
+#     """
+#     rewards = batch['all_rewards']  # [B, T, N]
+#     dones = batch['dones']          # [B, T, N]
+#     B, T, N = rewards.shape
+#     rtgs = torch.zeros_like(rewards)
+#     timesteps = torch.arange(T).unsqueeze(0).expand(B, T)
+#     for b in range(B):
+#         for n in range(N):
+#             R = 0.0
+#             for t in reversed(range(T)):
+#                 R = rewards[b, t, n] + (1 - dones[b, t, n]) * discount * R
+#                 rtgs[b, t, n] = R
+#     batch['rtgs'] = rtgs
+#     batch['timesteps'] = timesteps
+#     return batch
 
 
 def train_DT(replay_buffer, data_file, num_actions, args, parameters):
@@ -66,7 +66,7 @@ def train_DT(replay_buffer, data_file, num_actions, args, parameters):
         device=device
     )
 
-    replay_buffer.load_from_file(data_file)
+    replay_buffer.load_from_folder(data_file)
     print(f"Loaded {len(replay_buffer.buffer)} transitions.")
 
     evaluations = []
@@ -78,7 +78,7 @@ def train_DT(replay_buffer, data_file, num_actions, args, parameters):
         epoch_metrics = []
         for ep in tqdm(range(int(parameters["eval_freq"])), desc="DT Training Progress"):
             batch = replay_buffer.sample(parameters["batch_size"])
-            batch = add_dt_fields(batch, discount=0.99)
+            # batch = add_dt_fields(batch, discount=0.99)
             metrics = policy.train(batch)
             epoch_metrics.append(metrics)
             if ep % 1000 == 0:
@@ -149,11 +149,24 @@ def eval_policy(model_path, env_params, seed, eval_episodes=10):
         norm_rewards.append(norm_reward)
         arrival_ratios.append(arrival_ratio)
 
+        print(f"[Eval Episode {ep+1}] [Eval Seed {eval_seed}] Total Reward: {total_reward}, Normalized Reward: {norm_reward:.4f}, Arrival Ratio: {arrival_ratio*100:.2f}%")
+        wandb.log({"Total Reward": total_reward, "Evaluation Episodes": ep+1})
+        wandb.log({"Normalized Reward": norm_reward, "Evaluation Episodes": ep+1})
+        wandb.log({"Arrival Ratio %": arrival_ratio*100, "Evaluation Episodes": ep+1})
+
     avg_total_reward = np.mean(total_rewards)
     avg_norm_reward = np.mean(norm_rewards)
     avg_arrival_ratio = np.mean(arrival_ratios)
 
-    print(f"Evaluation over {eval_episodes} episodes: Avg Total Reward={avg_total_reward:.2f}, Avg Norm Reward={avg_norm_reward:.4f}, Avg Arrival Ratio={avg_arrival_ratio*100:.2f}%")
+    print("---------------------------------------")
+    print(f"Evaluation over {eval_episodes} episodes:")
+    print(f"  Avg Total Reward: {avg_total_reward:.2f}")
+    print(f"  Avg Normalized Reward: {avg_norm_reward:.4f}")
+    print(f"  Avg Arrival Ratio: {avg_arrival_ratio*100:.2f}%")
+    print("---------------------------------------")
+    wandb.log({"Avg Total Reward": avg_total_reward, "Evaluation Episodes": eval_episodes})
+    wandb.log({"Avg Norm Reward": avg_norm_reward, "Evaluation Episodes": eval_episodes})
+    wandb.log({"Avg Arrival Ratio %": avg_arrival_ratio*100, "Evaluation Episodes": eval_episodes})
     return avg_norm_reward
 
 
@@ -210,10 +223,8 @@ if __name__ == "__main__":
         data_folder2 = f"./offlineData_{n_agents}"
         data_file = collect_pickle_paths(data_folder1) + collect_pickle_paths(data_folder2)
     else:
-        if args.normal_reward:
-            data_file = f"offlineData/offline_rl_data_treeLSTM_{parameters['number_of_agents']}_agents_{args.data_n_eps}_episodes_normR.pkl"
-        else:
-            data_file = f"offlineData/offline_rl_data_treeLSTM_{parameters['number_of_agents']}_agents_{args.data_n_eps}_episodes.pkl"
+        rl_folder = f"./offlineData_{n_agents}"
+        data_file = collect_pickle_paths(rl_folder)
 
     print("---------------------------------------")
     if args.use_or:
@@ -247,5 +258,5 @@ if __name__ == "__main__":
         config=parameters
     )
 
-    replay_buffer = ReplayBuffer()
+    replay_buffer = ReplayBufferDT(max_len=50)
     train_DT(replay_buffer, data_file, num_actions, args, parameters)
