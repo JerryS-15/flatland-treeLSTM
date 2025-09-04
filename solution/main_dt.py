@@ -77,7 +77,7 @@ def train_DT(replay_buffer, data_file, num_actions, args, parameters):
     while training_iters < args.max_timesteps:
         epoch_metrics = []
         for ep in tqdm(range(int(parameters["eval_freq"])), desc="DT Training Progress"):
-            batch = replay_buffer.sample(parameters["batch_size"])
+            batch = replay_buffer.sample_batch(parameters["batch_size"])
             # batch = add_dt_fields(batch, discount=0.99)
             metrics = policy.train(batch)
             epoch_metrics.append(metrics)
