@@ -61,7 +61,7 @@ class DecisionTransformer(nn.Module):
         device = forest.device
 
         # Flatten batch+time+agent for TreeLSTM
-        forest = forest.view(B * T * N, fp.max_nodes, -1)
+        forest = forest.view(B * T * N, fp.num_tree_obs_nodes, -1)
         adjacency = adjacency.view(B * T * N, -1, 2)
         node_order = node_order.view(B * T * N, -1)
         edge_order = edge_order.view(B * T * N, -1)
