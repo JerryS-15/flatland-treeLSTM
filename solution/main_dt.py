@@ -67,7 +67,7 @@ def train_DT(replay_buffer, data_file, num_actions, args, parameters):
     )
 
     replay_buffer.load_from_folder(data_file)
-    print(f"Loaded {len(replay_buffer.buffer)} transitions.")
+    print(f"Loaded {len(replay_buffer.trajectories)} trajectories.")
 
     evaluations = []
     training_iters = 0
