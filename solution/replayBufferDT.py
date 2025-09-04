@@ -9,7 +9,7 @@ class ReplayBufferDT:
         self.trajectories = []
         self.max_len = max_len  # for truncating/padding T
 
-    def load_from_folder(self, folder_path):
+    def load_from_folder(self, file_paths):
         # files = [f for f in os.listdir(folder_path) if f.endswith('.pkl')]
         # print(f"Found {len(files)} episodes.")
         # for file in files:
