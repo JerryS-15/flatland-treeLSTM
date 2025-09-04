@@ -172,6 +172,7 @@ if __name__ == "__main__":
     parser.add_argument("--data_n_eps", default=1000, type=int)
     parser.add_argument("--n_agents", default=5, type=int)
     parser.add_argument("--batch_size", default=128, type=int)
+    parser.add_argument("--normal_reward", action="store_true", help="Use dataset with normed_rewards for agent")
     parser.add_argument("--use_or", "-or", action="store_true")
     parser.add_argument("--use_mix", "-mix", action="store_true")
     args = parser.parse_args()
@@ -198,21 +199,51 @@ if __name__ == "__main__":
 
     num_actions = 5
     if args.use_or:
-        or_folder = f"./orData_agent_{n_agents}_normR"
-        data_file = collect_pickle_paths(or_folder)
+        if args.normal_reward:
+            or_folder = f"./orData_agent_{n_agents}_normR"
+            data_file = collect_pickle_paths(or_folder)
+        else:
+            or_folder = f"./orData_agent_{n_agents}"
+            data_file = collect_pickle_paths(or_folder)
     elif args.use_mix:
         data_folder1 = f"./orData_agent_{n_agents}_normR"
         data_folder2 = f"./offlineData_{n_agents}"
         data_file = collect_pickle_paths(data_folder1) + collect_pickle_paths(data_folder2)
     else:
-        data_file = f"offlineData/offline_rl_data_treeLSTM_{n_agents}_agents_{args.data_n_eps}_episodes_normR.pkl"
+        if args.normal_reward:
+            data_file = f"offlineData/offline_rl_data_treeLSTM_{parameters['number_of_agents']}_agents_{args.data_n_eps}_episodes_normR.pkl"
+        else:
+            data_file = f"offlineData/offline_rl_data_treeLSTM_{parameters['number_of_agents']}_agents_{args.data_n_eps}_episodes.pkl"
+
+    print("---------------------------------------")
+    if args.use_or:
+        print("Start DT training for flatland TreeLSTM with OR-Solution Dataset.")
+        mode = "DT-OR"
+    elif args.use_mix:
+            print("Start DT training for flatland TreeLSTM with OR-RL Mixed Dataset.")
+            mode = "DT-MIX"
+    else:
+        print("Start DT training for flatland TreeLSTM.")
+        mode = "DT"
+    print("Training Details:")
+    print(f"Batch Size: {parameters['batch_size']}")
+    print(f"Number of agents: {parameters['number_of_agents']}")
+    print(f"Dataset episodes: {args.data_n_eps}")
+    if args.use_mix:
+        print(f"Dataset folder: {data_folder1} & {data_folder2}")
+    elif args.use_or:
+        print(f"Dataset folder: {or_folder}")
+    else:
+        print(f"Dataset file: {data_file}")
+    print("---------------------------------------")
 
     if not os.path.exists("./results"):
         os.makedirs("./results")
 
+    print("Starting wandb, view at https://wandb.ai/")
     wandb.init(
-        project='flatland-TreeLSTM-DT', 
-        name=f"DT_{n_agents}agents_seed{args.seed}_{time.strftime('%m%d%H%M%S')}",
+        project='flatland-TreeLSTM', 
+        name=f"{mode}_{n_agents}agents_seed{args.seed}_{time.strftime('%m%d%H%M%S')}",
         config=parameters
     )
 
