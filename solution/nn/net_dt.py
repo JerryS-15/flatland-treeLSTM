@@ -63,9 +63,9 @@ class DecisionTransformer(nn.Module):
 
         # ---- flatten batch/time/agent for TreeLSTM ----
         forest_flat = forest.reshape(B * T * N, num_nodes, node_dim)
-        adjacency_flat = adjacency.reshape(B * T * N, E, 2)
-        node_order_flat = node_order.reshape(B * T * N, num_nodes)
-        edge_order_flat = edge_order.reshape(B * T * N, E)
+        adjacency_flat = adjacency.reshape(B * T * N, -1, 2)
+        node_order_flat = node_order.reshape(B * T * N, -1)
+        edge_order_flat = edge_order.reshape(B * T * N, -1)
 
         adjacency_flat = self.modify_adjacency(adjacency_flat, device)
 
