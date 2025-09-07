@@ -61,23 +61,25 @@ class DecisionTransformer(nn.Module):
         device = forest.device
                                
         # Flatten batch+time+agent for TreeLSTM
-        forest = forest.reshape(-1, num_nodes, node_dim)                     # [B*T*N, N_nodes, node_dim]
-        adjacency = adjacency.reshape(-1, adjacency.shape[-2], 2)           # [B*T*N, E, 2]
-        node_order = node_order.reshape(-1, node_order.shape[-1])           # [B*T*N, E]
-        edge_order = edge_order.reshape(-1, edge_order.shape[-1])           # [B*T*N, E]
+        # forest = forest.reshape(-1, num_nodes, node_dim)                     # [B*T*N, N_nodes, node_dim]
+        # adjacency = adjacency.reshape(-1, adjacency.shape[-2], 2)           # [B*T*N, E, 2]
+        # node_order = node_order.reshape(-1, node_order.shape[-1])           # [B*T*N, E]
+        # edge_order = edge_order.reshape(-1, edge_order.shape[-1])           # [B*T*N, E]
 
         # Apply TreeLSTM to each tree separately
-        tree_emb_list = []
-        for i in range(forest.shape[0]):
-            tree_h = self.tree_lstm(
-                forest[i],                # [num_nodes, node_dim]
-                adjacency[i],            # [E, 2]
-                node_order[i],           # [E]
-                edge_order[i]            # [E]
-            )                            # [num_nodes, hidden]
-            tree_emb_list.append(tree_h[0])  # assume root node is first -> [hidden_dim]
+        # tree_emb_list = []
+        # for i in range(forest.shape[0]):
+        #     tree_h = self.tree_lstm(
+        #         forest[i],                # [num_nodes, node_dim]
+        #         adjacency[i],            # [E, 2]
+        #         node_order[i],           # [E]
+        #         edge_order[i]            # [E]
+        #     )                            # [num_nodes, hidden]
+        #     tree_emb_list.append(tree_h[0])  # assume root node is first -> [hidden_dim]
 
-        tree_emb = torch.stack(tree_emb_list, dim=0)                  # [B*T*N, hidden]
+        # tree_emb = torch.stack(tree_emb_list, dim=0)                  # [B*T*N, hidden]
+        tree_emb = self.tree_lstm(forest, adjacency, node_order, edge_order)
+        tree_emb = tree_emb[:, 0, :]
         tree_emb = tree_emb.view(B, T, N, -1)                         # [B, T, N, hidden]
 
         # Process agent attributes
