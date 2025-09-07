@@ -58,13 +58,14 @@ class DecisionTransformer(nn.Module):
         - timesteps:    [B, T]
         """
         B, T, N, num_nodes, node_dim = forest.shape
+        _, _, _, E, _ = adjacency.shape
         device = next(self.parameters()).device
 
         # ---- flatten batch/time/agent for TreeLSTM ----
         forest_flat = forest.reshape(B * T * N, num_nodes, node_dim)
-        adjacency_flat = adjacency.reshape(B * T * N, adjacency.shape[3], 2)
-        node_order_flat = node_order.reshape(B * T * N, node_order.shape[2])
-        edge_order_flat = edge_order.reshape(B * T * N, edge_order.shape[2])
+        adjacency_flat = adjacency.reshape(B * T * N, E, 2)
+        node_order_flat = node_order.reshape(B * T * N, num_nodes)
+        edge_order_flat = edge_order.reshape(B * T * N, E)
 
         adjacency_flat = self.modify_adjacency(adjacency_flat, device)
 
