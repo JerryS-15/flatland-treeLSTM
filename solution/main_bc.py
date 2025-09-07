@@ -70,7 +70,7 @@ def train_BC(replay_buffer, data_file, num_actions, args, parameters):
             metrics = policy.train(batch)
             epoch_metrics.append(metrics)
             if ep % 1000 == 0:
-                tqdm.write(f"Epoch {ep}, Loss: {metrics['total_loss']:.4f}, Q_Loss: {metrics['q_loss']:.4f}, i_Loss: {metrics['i_loss']:.4f}")
+                tqdm.write(f"Epoch {ep}, Loss: {metrics['total_loss']:.4f}, i_Loss: {metrics['i_loss']:.4f}")
         
         avg_metrics = {
             k: np.mean([m[k] for m in epoch_metrics])
