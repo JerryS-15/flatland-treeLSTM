@@ -58,47 +58,50 @@ class DecisionTransformer(nn.Module):
         - timesteps:    [B, T]
         """
         B, T, N, num_nodes, node_dim = forest.shape
-        device = forest.device
-                               
-        # Flatten batch+time+agent for TreeLSTM
-        # forest = forest.reshape(-1, num_nodes, node_dim)                     # [B*T*N, N_nodes, node_dim]
-        # adjacency = adjacency.reshape(-1, adjacency.shape[-2], 2)           # [B*T*N, E, 2]
-        # node_order = node_order.reshape(-1, node_order.shape[-1])           # [B*T*N, E]
-        # edge_order = edge_order.reshape(-1, edge_order.shape[-1])           # [B*T*N, E]
+        device = next(self.parameters()).device
 
-        # Apply TreeLSTM to each tree separately
-        # tree_emb_list = []
-        # for i in range(forest.shape[0]):
-        #     tree_h = self.tree_lstm(
-        #         forest[i],                # [num_nodes, node_dim]
-        #         adjacency[i],            # [E, 2]
-        #         node_order[i],           # [E]
-        #         edge_order[i]            # [E]
-        #     )                            # [num_nodes, hidden]
-        #     tree_emb_list.append(tree_h[0])  # assume root node is first -> [hidden_dim]
+        # Reshape to [B*T, N, ...] so that each timestep's batch is a separate item
+        forest = forest.view(B * T, N, num_nodes, node_dim)
+        adjacency = adjacency.view(B * T, N, -1, 2)
+        node_order = node_order.view(B * T, N, -1)
+        edge_order = edge_order.view(B * T, N, -1)
 
-        # tree_emb = torch.stack(tree_emb_list, dim=0)                  # [B*T*N, hidden]
+        # Process adjacency to avoid index collisions
+        adjacency = self.modify_adjacency(adjacency, device)
+
+        # Get tree embeddings: [B*T*N*num_nodes, hidden_dim]
         tree_emb = self.tree_lstm(forest, adjacency, node_order, edge_order)
-        tree_emb = tree_emb[:, 0, :]
-        tree_emb = tree_emb.view(B, T, N, -1)                         # [B, T, N, hidden]
 
-        # Process agent attributes
-        attr_emb = self.attr_embedding(agent_attr)                   # [B, T, N, hidden]
-        state_emb = self.state_projector(torch.cat([tree_emb, attr_emb], dim=-1))  # [B, T, N, state_dim]
+        # Only keep root node embeddings: [B*T, N, hidden_dim]
+        tree_emb = tree_emb.unflatten(0, (B * T, N, num_nodes))[:, :, 0, :]
+        tree_emb = tree_emb.view(B, T, N, -1)  # [B, T, N, hidden_dim]
 
-        # Embed each modality
-        s = self.embed_state(state_emb)                         # [B, T, N, D]
-        a = self.embed_action(actions)                          # [B, T, N, D]
-        r = self.embed_rtg(rtgs.unsqueeze(-1))                  # [B, T, N, D]
-        t = self.embed_timestep(timesteps).unsqueeze(2).expand(-1, -1, N, -1)  # [B, T, N, D]
+        # Process agent attributes (shared across time)
+        agent_attr = self.attr_embedding(agent_attr)  # [B, N, hidden_dim]
+        agent_attr = agent_attr.unsqueeze(1).repeat(1, T, 1, 1)  # [B, T, N, hidden_dim]
 
-        # Interleave input as: [R_0, S_0, A_0, R_1, S_1, A_1, ...]
-        x = torch.stack([r, s, a], dim=3).reshape(B, T * 3, N, self.embed_dim)  # [B, T*3, N, D]
-        x = x.permute(0, 2, 1, 3).reshape(B * N, T * 3, self.embed_dim)         # [B*N, L, D]
+        # Concatenate tree embedding and attr embedding
+        x = torch.cat([tree_emb, agent_attr], dim=-1)  # [B, T, N, hidden_dim * 2]
 
-        # Transformer
-        h = self.transformer(x)  # [B*N, L, D]
+        # Apply transformer
+        x = self.transformer(x)  # [B, T, N, hidden_dim]
 
-        # Predict from last token
-        act_preds = self.predict_action(h[:, -1, :])  # [B*N, act_dim]
-        return act_preds.view(B, N, -1)  # [B, N, act_dim]
+        # Predict logits per agent
+        logits = self.predictor(x)  # [B, T, N, num_actions]
+
+        return logits
+    
+    def modify_adjacency(self, adjacency, device):
+        batch_size, n_agents, num_edges, _ = adjacency.shape
+        num_nodes = num_edges + 1
+        mask0_invalid = (adjacency[..., 0] < 0) | (adjacency[..., 0] >= num_nodes)
+        mask1_invalid = (adjacency[..., 1] < 0) | (adjacency[..., 1] >= num_nodes)
+        adjacency[..., 0][mask0_invalid] = -2
+        adjacency[..., 1][mask1_invalid] = -2
+        id_tree = torch.arange(0, batch_size * n_agents, device=device)
+        id_nodes = id_tree.view(batch_size, n_agents, 1)
+        adjacency[adjacency == -2] = (-batch_size * n_agents * num_nodes)
+        adjacency[..., 0] += id_nodes * num_nodes
+        adjacency[..., 1] += id_nodes * num_nodes
+        adjacency[adjacency < 0] = -2
+        return adjacency
