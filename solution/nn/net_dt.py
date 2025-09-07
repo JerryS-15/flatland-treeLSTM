@@ -52,25 +52,37 @@ class DecisionTransformer(nn.Module):
         - forest:       [B, T, N_agents, N_nodes, node_dim]
         - agent_attr:   [B, T, N_agents, agent_attr]
         - adjacency:    [B, T, N_agents, E, 2]
-        - node_order, edge_order: shape matching TreeLSTM
+        - node_order, edge_order: [B, T, N_agents]
         - actions:      [B, T, N_agents]
         - rtgs:         [B, T, N_agents]
         - timesteps:    [B, T]
         """
-        B, T, N, *_ = forest.shape
+        B, T, N, num_nodes, node_dim = forest.shape
         device = forest.device
+        E = adjacency.shape[3]
 
-        # Flatten batch+time+agent for TreeLSTM
-        forest = forest.view(B * T * N, fp.num_tree_obs_nodes, -1)
-        adjacency = adjacency.view(B * T * N, -1, 2)
-        # node_order = node_order.view(B * T * N, -1)
-        # edge_order = edge_order.view(B * T * N, -1)
+        # Reshape into list of B*T*N trees
+        forest = forest.view(-1, num_nodes, node_dim)                 # [B*T*N, num_nodes, node_dim]
+        adjacency = adjacency.view(-1, E, 2)                          # [B*T*N, E, 2]
+        node_order = node_order.view(-1, E)                           # [B*T*N, E]
+        edge_order = edge_order.view(-1, E)                           # [B*T*N, E]
 
-        tree_emb = self.tree_lstm(forest, adjacency, node_order, edge_order)  # [B*T*N, node_dim]
-        tree_emb = tree_emb[:, 0, :]  # assume root is first node
-        tree_emb = tree_emb.view(B, T, N, -1)
+        # Apply TreeLSTM to each tree separately
+        tree_emb_list = []
+        for i in range(forest.shape[0]):
+            tree_h = self.tree_lstm(
+                forest[i],                # [num_nodes, node_dim]
+                adjacency[i],            # [E, 2]
+                node_order[i],           # [E]
+                edge_order[i]            # [E]
+            )                            # [num_nodes, hidden]
+            tree_emb_list.append(tree_h[0])  # assume root node is first -> [hidden_dim]
 
-        attr_emb = self.attr_embedding(agent_attr)  # [B, T, N, dim]
+        tree_emb = torch.stack(tree_emb_list, dim=0)                  # [B*T*N, hidden]
+        tree_emb = tree_emb.view(B, T, N, -1)                         # [B, T, N, hidden]
+
+        # Process agent attributes
+        attr_emb = self.attr_embedding(agent_attr)                   # [B, T, N, hidden]
         state_emb = self.state_projector(torch.cat([tree_emb, attr_emb], dim=-1))  # [B, T, N, state_dim]
 
         # Embed each modality
@@ -83,10 +95,9 @@ class DecisionTransformer(nn.Module):
         x = torch.stack([r, s, a], dim=3).reshape(B, T * 3, N, self.embed_dim)  # [B, T*3, N, D]
         x = x.permute(0, 2, 1, 3).reshape(B * N, T * 3, self.embed_dim)         # [B*N, L, D]
 
-        # Apply transformer
+        # Transformer
         h = self.transformer(x)  # [B*N, L, D]
 
-        # Predict action from last state (e.g., token at position -2 or -1)
-        # For simplicity, predict next action from last position:
+        # Predict from last token
         act_preds = self.predict_action(h[:, -1, :])  # [B*N, act_dim]
         return act_preds.view(B, N, -1)  # [B, N, act_dim]
