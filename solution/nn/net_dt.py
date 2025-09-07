@@ -60,36 +60,44 @@ class DecisionTransformer(nn.Module):
         B, T, N, num_nodes, node_dim = forest.shape
         device = next(self.parameters()).device
 
-        # Reshape to [B*T, N, ...] so that each timestep's batch is a separate item
-        forest = forest.view(B * T, N, num_nodes, node_dim)
-        adjacency = adjacency.view(B * T, N, -1, 2)
-        node_order = node_order.view(B * T, N, -1)
-        edge_order = edge_order.view(B * T, N, -1)
+        # ---- flatten batch/time/agent for TreeLSTM ----
+        forest_flat = forest.reshape(B * T * N, num_nodes, node_dim)
+        adjacency_flat = adjacency.reshape(B * T * N, adjacency.shape[3], 2)
+        node_order_flat = node_order.reshape(B * T * N, node_order.shape[2])
+        edge_order_flat = edge_order.reshape(B * T * N, edge_order.shape[2])
 
-        # Process adjacency to avoid index collisions
-        adjacency = self.modify_adjacency(adjacency, device)
+        adjacency_flat = self.modify_adjacency(adjacency_flat, device)
 
-        # Get tree embeddings: [B*T*N*num_nodes, hidden_dim]
-        tree_emb = self.tree_lstm(forest, adjacency, node_order, edge_order)
+        # TreeLSTM embedding
+        tree_emb = self.tree_lstm(forest_flat, adjacency_flat, node_order_flat, edge_order_flat)
+        # 输出 shape: [B*T*N*num_nodes, hidden_dim], 取 root 节点
+        tree_emb = tree_emb.view(B, T, N, num_nodes, -1)[:, :, :, 0, :]  # [B, T, N, hidden_dim]
 
-        # Only keep root node embeddings: [B*T, N, hidden_dim]
-        tree_emb = tree_emb.unflatten(0, (B * T, N, num_nodes))[:, :, 0, :]
-        tree_emb = tree_emb.view(B, T, N, -1)  # [B, T, N, hidden_dim]
+        # agent_attr embedding
+        agent_attr_emb = self.attr_embedding(agent_attr)  # [B, T, N, hidden_dim] 或 [B, N, hidden_dim] 根据实际情况
+        if agent_attr_emb.dim() == 3:  # [B, N, hidden_dim]
+            agent_attr_emb = agent_attr_emb.unsqueeze(1).repeat(1, T, 1, 1)
 
-        # Process agent attributes (shared across time)
-        agent_attr = self.attr_embedding(agent_attr)  # [B, N, hidden_dim]
-        agent_attr = agent_attr.unsqueeze(1).repeat(1, T, 1, 1)  # [B, T, N, hidden_dim]
+        # concat tree_emb + agent_attr_emb
+        state_emb = torch.cat([tree_emb, agent_attr_emb], dim=-1)  # [B, T, N, hidden*2]
+        state_emb = self.state_projector(state_emb)                # [B, T, N, state_dim]
 
-        # Concatenate tree embedding and attr embedding
-        x = torch.cat([tree_emb, agent_attr], dim=-1)  # [B, T, N, hidden_dim * 2]
+        # embed for transformer
+        s = self.embed_state(state_emb)
+        a = self.embed_action(actions)
+        r = self.embed_rtg(rtgs.unsqueeze(-1))
+        t = self.embed_timestep(timesteps).unsqueeze(2).expand(-1, -1, N, -1)
 
-        # Apply transformer
-        x = self.transformer(x)  # [B, T, N, hidden_dim]
+        # interleave R,S,A
+        x = torch.stack([r, s, a], dim=3).reshape(B, T * 3, N, self.embed_dim)
+        x = x.permute(0, 2, 1, 3).reshape(B * N, T * 3, self.embed_dim)
 
-        # Predict logits per agent
-        logits = self.predictor(x)  # [B, T, N, num_actions]
+        # transformer
+        h = self.transformer(x)
 
-        return logits
+        # predict actions
+        act_preds = self.predict_action(h[:, -1, :])
+        return act_preds.view(B, N, -1)
     
     def modify_adjacency(self, adjacency, device):
         batch_size, n_agents, num_edges, _ = adjacency.shape
