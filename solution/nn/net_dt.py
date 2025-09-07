@@ -59,13 +59,12 @@ class DecisionTransformer(nn.Module):
         """
         B, T, N, num_nodes, node_dim = forest.shape
         device = forest.device
-        E = adjacency.shape[3]
-
-        # Reshape into list of B*T*N trees
-        forest = forest.view(-1, num_nodes, node_dim)                 # [B*T*N, num_nodes, node_dim]
-        adjacency = adjacency.view(-1, E, 2)                          # [B*T*N, E, 2]
-        node_order = node_order.view(-1, E)                           # [B*T*N, E]
-        edge_order = edge_order.view(-1, E)                           # [B*T*N, E]
+                               
+        # Flatten batch+time+agent for TreeLSTM
+        forest = forest.reshape(-1, num_nodes, node_dim)                     # [B*T*N, N_nodes, node_dim]
+        adjacency = adjacency.reshape(-1, adjacency.shape[-2], 2)           # [B*T*N, E, 2]
+        node_order = node_order.reshape(-1, node_order.shape[-1])           # [B*T*N, E]
+        edge_order = edge_order.reshape(-1, edge_order.shape[-1])           # [B*T*N, E]
 
         # Apply TreeLSTM to each tree separately
         tree_emb_list = []
