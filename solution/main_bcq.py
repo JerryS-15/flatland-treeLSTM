@@ -262,7 +262,10 @@ if __name__ == "__main__":
         # data_file = f'mixData/merged_{n_agents}_agents.pkl'
     else:
         if args.normal_reward:
-            data_file = f"offlineData/offline_rl_data_treeLSTM_{parameters['number_of_agents']}_agents_{args.data_n_eps}_episodes_normR.pkl"
+            # data_file = f"offlineData/offline_rl_data_treeLSTM_{parameters['number_of_agents']}_agents_{args.data_n_eps}_episodes_normR.pkl"
+            data_folder1 = f"./offlineData_{n_agents}_noisy"
+            data_folder2 = f"./offlineData_{n_agents}"
+            data_file = collect_pickle_paths(data_folder1) + collect_pickle_paths(data_folder2)
         else:
             data_file = f"offlineData/offline_rl_data_treeLSTM_{parameters['number_of_agents']}_agents_{args.data_n_eps}_episodes.pkl"
     # data_file = f"offlineData/offline_rl_data_treeLSTM_{parameters['number_of_agents']}_agents.pkl"

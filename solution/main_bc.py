@@ -61,11 +61,11 @@ def train_BC(replay_buffer, data_file, num_actions, args, parameters):
     evaluations = []
     training_iters = 0
 
-    print("BCQ Training started.")
+    print("BC Training started.")
 
     while training_iters < args.max_timesteps:
         epoch_metrics = []
-        for ep in tqdm(range(int(parameters["eval_freq"])), desc="BCQ Training Progress"):
+        for ep in tqdm(range(int(parameters["eval_freq"])), desc="BC Training Progress"):
             batch = replay_buffer.sample(parameters["batch_size"])
             metrics = policy.train(batch)
             epoch_metrics.append(metrics)
@@ -257,7 +257,10 @@ if __name__ == "__main__":
         # data_file = f'mixData/merged_{n_agents}_agents.pkl'
     else:
         if args.normal_reward:
-            data_file = f"offlineData/offline_rl_data_treeLSTM_{parameters['number_of_agents']}_agents_{args.data_n_eps}_episodes_normR.pkl"
+            # data_file = f"offlineData/offline_rl_data_treeLSTM_{parameters['number_of_agents']}_agents_{args.data_n_eps}_episodes_normR.pkl"
+            data_folder1 = f"./offlineData_{n_agents}_noisy"
+            data_folder2 = f"./offlineData_{n_agents}"
+            data_file = collect_pickle_paths(data_folder1) + collect_pickle_paths(data_folder2)
         else:
             data_file = f"offlineData/offline_rl_data_treeLSTM_{parameters['number_of_agents']}_agents_{args.data_n_eps}_episodes.pkl"
     # data_file = f"offlineData/offline_rl_data_treeLSTM_{parameters['number_of_agents']}_agents.pkl"
