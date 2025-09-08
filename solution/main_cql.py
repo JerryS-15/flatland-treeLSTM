@@ -207,14 +207,14 @@ def eval_policy(model_path, env_params, seed, eval_episodes=10, isGlobal=False):
         line_generator=SparseLineGen(
             speed_ratio_map=env_params['speed_ratio_map'],
         ),
-        # malfunction_generator=ParamMalfunctionGen(
-        #     MalfunctionParameters(
-        #         malfunction_rate=env_params['malfunction_rate'],
-        #         min_duration=env_params['min_duration'],
-        #         max_duration=env_params['max_duration']
-        #     )
-        # ),
-        malfunction_generator=None,
+        malfunction_generator=ParamMalfunctionGen(
+            MalfunctionParameters(
+                malfunction_rate=env_params['malfunction_rate'],
+                min_duration=env_params['min_duration'],
+                max_duration=env_params['max_duration']
+            )
+        ),
+        # malfunction_generator=None,
         obs_builder_object=TreeCutils(fp.num_tree_obs_nodes, fp.tree_pred_path_depth),
         remove_agents_at_target=True,
         random_seed=seed + 100

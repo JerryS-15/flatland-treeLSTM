@@ -115,14 +115,14 @@ def eval_policy(model_path, env_params, seed, eval_episodes=10):
         line_generator=SparseLineGen(
             speed_ratio_map=env_params['speed_ratio_map'],
         ),
-        # malfunction_generator=ParamMalfunctionGen(
-        #     MalfunctionParameters(
-        #         malfunction_rate=env_params['malfunction_rate'],
-        #         min_duration=env_params['min_duration'],
-        #         max_duration=env_params['max_duration']
-        #     )
-        # ),
-        malfunction_generator=None,
+        malfunction_generator=ParamMalfunctionGen(
+            MalfunctionParameters(
+                malfunction_rate=env_params['malfunction_rate'],
+                min_duration=env_params['min_duration'],
+                max_duration=env_params['max_duration']
+            )
+        ),
+        # malfunction_generator=None,
         obs_builder_object=TreeCutils(fp.num_tree_obs_nodes, fp.tree_pred_path_depth),
         remove_agents_at_target=True,
         random_seed=seed + 100
@@ -284,7 +284,10 @@ if __name__ == "__main__":
     elif args.use_or:
         print(f"Dataset folder: {or_folder}")
     else:
-        print(f"Dataset file: {data_file}")
+        if args.normal_reward:
+            print(f"Dataset folder: {data_folder1} & {data_folder2}")
+        else:
+            print(f"Dataset file: {data_file}")
     print("---------------------------------------")
 
     if not os.path.exists("./results"):
