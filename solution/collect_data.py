@@ -110,8 +110,8 @@ if __name__ == "__main__":
     if not os.path.exists("./offlineData"):
         os.makedirs("./offlineData")
 
-    if not os.path.exists(f"./offlineData_{N_AGENTS}"):
-        os.makedirs(f"./offlineData_{N_AGENTS}")
+    if not os.path.exists(f"./offlineData_{N_AGENTS}_{mode}"):
+        os.makedirs(f"./offlineData_{N_AGENTS}_{mode}")
 
     print("Starting wandb, view at https://wandb.ai/")
     wandb.init(
@@ -205,7 +205,7 @@ if __name__ == "__main__":
         all_offline_data.extend(episode_data)
         dataset_info.extend(info_data)
 
-        eps_save_path = f"offlineData_{N_AGENTS}/data_{episode+1}.pkl"
+        eps_save_path = f"offlineData_{N_AGENTS}_{mode}/data_{episode+1}.pkl"
         with open(eps_save_path, "wb") as f:
             pickle.dump(episode_data, f)
     
