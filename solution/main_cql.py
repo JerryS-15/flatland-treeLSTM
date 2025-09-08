@@ -351,7 +351,10 @@ if __name__ == "__main__":
         data_file = collect_pickle_paths(data_folder1) + collect_pickle_paths(data_folder2)
     else:
         if args.normal_reward:
-            data_file = f"offlineData/offline_rl_data_treeLSTM_{parameters['number_of_agents']}_agents_{args.data_n_eps}_episodes_normR.pkl"
+            # data_file = f"offlineData/offline_rl_data_treeLSTM_{parameters['number_of_agents']}_agents_{args.data_n_eps}_episodes_normR.pkl"
+            data_folder1 = f"./offlineData_{n_agents}_noisy"
+            data_folder2 = f"./offlineData_{n_agents}"
+            data_file = collect_pickle_paths(data_folder1) + collect_pickle_paths(data_folder2)
         else:
             data_file = f"offlineData/offline_rl_data_treeLSTM_{parameters['number_of_agents']}_agents_{args.data_n_eps}_episodes.pkl"
     # data_file = f"offlineData/offline_rl_data_treeLSTM_{parameters['number_of_agents']}_agents.pkl"
@@ -379,7 +382,10 @@ if __name__ == "__main__":
     elif args.use_or:
         print(f"Dataset folder: {or_folder}")
     else:
-        print(f"Dataset file: {data_file}")
+        if args.normal_reward:
+            print(f"Dataset folder: {data_folder1} & {data_folder2}")
+        else:
+            print(f"Dataset file: {data_file}")
     print("---------------------------------------")
 
     if not os.path.exists("./results"):
