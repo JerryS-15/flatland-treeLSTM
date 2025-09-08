@@ -26,7 +26,7 @@ import copy
 import pandas as pd
 import random
 
-N_AGENTS = 20
+N_AGENTS = 5
 WIDTH = 30
 HEIGHT = 35
 NUM_EPISODES = 1000
