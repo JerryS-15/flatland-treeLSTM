@@ -27,7 +27,9 @@ class MultiAgentDiscreteBCQ:
         self.target_update_freq = target_update_freq
 
         self.Q = BCQNetwork().to(device)
+        self.Q2 = BCQNetwork().to(device)
         self.Q_target = copy.deepcopy(self.Q).to(device)
+        self.Q2_target = copy.deepcopy(self.Q2).to(device)
         self.optimizer = torch.optim.Adam(self.Q.parameters(), lr=lr)
 
         self.iterations = 0
@@ -57,7 +59,10 @@ class MultiAgentDiscreteBCQ:
             q_masked = mask.float() * q_next + (~mask).float() * -1e8
             next_action = q_masked.argmax(dim=-1, keepdim=True)
 
-            q_target, _, _ = self.Q_target(next_agents_attr, next_forest, next_adjacency, next_node_order, next_edge_order)
+            q_target, _, _ = torch.min(
+                self.Q_target(next_agents_attr, next_forest, next_adjacency, next_node_order, next_edge_order),
+                self.Q2_target(next_agents_attr, next_forest, next_adjacency, next_node_order, next_edge_order)
+            )
             max_next_q = q_target.gather(-1, next_action).squeeze(-1)
             target_q = rewards + (1.0 - dones) * self.discount * max_next_q
         
