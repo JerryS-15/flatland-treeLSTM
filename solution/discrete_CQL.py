@@ -13,8 +13,9 @@ class MultiAgentDiscreteCQL:
         alpha=1.0,
         discount=0.99,
         tau=0.005,
-        lr=3e-4,
-        target_update_freq=1000
+        lr=1e-4,  # lower from 3e-4, improve stability
+        target_update_freq=200, # lower from 1000
+        auto_alpha = False
     ):
         self.device = device
 
@@ -28,6 +29,11 @@ class MultiAgentDiscreteCQL:
         self.tau = tau
         self.target_update_freq = target_update_freq
         self.iterations = 0
+
+        self.auto_alpha = auto_alpha
+        if auto_alpha:
+            self.log_alpha = torch.tensor(np.log(alpha), requires_grad=True, device=device)
+            self.alpha_optimizer = torch.optim.Adam([self.log_alpha], lr=lr)
 
     def train(self, batch):
         device = self.device
@@ -78,13 +84,24 @@ class MultiAgentDiscreteCQL:
 
         # CQL Regularization - uniform mu(s, a)
         logsumexp_q = torch.logsumexp(current_q_values, dim=-1)
+
+        # min_q = current_q_values.min(dim=-1).values.detach()
+
         cql_penalty = (logsumexp_q - chosen_q).mean()
 
-        total_loss = bellman_loss + self.alpha * cql_penalty
+        alpha = self.log_alpha.exp() if self.auto_alpha else self.alpha
+
+        total_loss = bellman_loss + alpha * cql_penalty
 
         self.optimizer.zero_grad()
         total_loss.backward()
         self.optimizer.step()
+
+        if self.auto_alpha:
+            alpha_loss = -self.log_alpha * (cql_penalty.detach() - 1.0)  # target gap adjustable
+            self.alpha_optimizer.zero_grad()
+            alpha_loss.backward()
+            self.alpha_optimizer.step()
 
         if self.iterations % self.target_update_freq == 0:
             self._soft_update()
@@ -113,9 +130,15 @@ class MultiAgentDiscreteCQL:
     def save(self, filename):
         torch.save(self.model.state_dict(), filename + "_model.pt")
         torch.save(self.optimizer.state_dict(), filename + "_optimizer")
+        if self.auto_alpha:
+            torch.save(self.log_alpha, filename + "_log_alpha.pt")
 
     def load(self, filename):
         self.model.load_state_dict(torch.load(filename + "_model.pt", map_location=self.device))
         self.target_model = copy.deepcopy(self.model)
         self.optimizer.load_state_dict(torch.load(filename + "_optimizer", map_location=self.device))
+        if self.auto_alpha:
+            self.log_alpha = torch.load(filename + "_log_alpha.pt", map_location=self.device)
+            self.log_alpha.requires_grad = True
+            self.alpha_optimizer = torch.optim.Adam([self.log_alpha])
         

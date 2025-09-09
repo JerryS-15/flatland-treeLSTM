@@ -58,7 +58,8 @@ def train_CQL(replay_buffer, data_file, num_actions, args, parameters):
 
     policy = discrete_CQL.MultiAgentDiscreteCQL(
         num_actions,
-        device=device
+        device=device,
+        auto_alpha=True
     )
 
     if args.use_mix:
