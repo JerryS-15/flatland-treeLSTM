@@ -90,8 +90,9 @@ class MultiAgentDiscreteCQL:
         cql_penalty = (logsumexp_q - chosen_q).mean()
 
         # --------------- Behavior Cloning loss ---------------
-        bc_loss = F.cross_entropy(current_q_values, actions)
-        bc_lambda = 1.0  # weight for behavior cloning loss
+        # actions = actions.long().squeeze(-1)
+        # bc_loss = F.cross_entropy(current_q_values, actions)
+        # bc_lambda = 1.0  # weight for behavior cloning loss
 
         # --------------- Warm-up logic ---------------
         warmup_steps = 5000
@@ -101,7 +102,8 @@ class MultiAgentDiscreteCQL:
 
         # total_loss = bellman_loss + alpha * cql_penalty
         # --------------- Total Loss ---------------
-        total_loss = bellman_loss + bc_lambda * bc_loss
+        # total_loss = bellman_loss + bc_lambda * bc_loss
+        total_loss = bellman_loss
         if apply_cql:
             total_loss += alpha * cql_penalty
 
