@@ -59,12 +59,13 @@ class MultiAgentDiscreteBCQ:
             q_masked = mask.float() * q_next + (~mask).float() * -1e8
             next_action = q_masked.argmax(dim=-1, keepdim=True)
 
-            q_target, _, _ = torch.min(
-                self.Q_target(next_agents_attr, next_forest, next_adjacency, next_node_order, next_edge_order),
-                self.Q2_target(next_agents_attr, next_forest, next_adjacency, next_node_order, next_edge_order)
-            )
-            max_next_q = q_target.gather(-1, next_action).squeeze(-1)
-            target_q = rewards + (1.0 - dones) * self.discount * max_next_q
+            q_target1, _, _ = self.Q_target(next_agents_attr, next_forest, next_adjacency, next_node_order, next_edge_order)
+            q_target2, _, _ = self.Q2_target(next_agents_attr, next_forest, next_adjacency, next_node_order, next_edge_order)
+
+            # max_next_q = q_target.gather(-1, next_action).squeeze(-1)
+            q_target_min = torch.min(q_target1.gather(-1, next_action), q_target2.gather(-1, next_action)).squeeze(-1)
+            # target_q = rewards + (1.0 - dones) * self.discount * max_next_q
+            target_q = rewards + (1.0 - dones) * self.discount * q_target_min
         
         q_pred, imt_log, i_logits = self.Q(agents_attr, forest, adjacency, node_order, edge_order)
         current_q = q_pred.gather(-1, actions.unsqueeze(-1)).squeeze(-1)
