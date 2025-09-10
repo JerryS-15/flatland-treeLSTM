@@ -277,8 +277,7 @@ if __name__ == "__main__":
         mode = "BCQ"
     print("Training Details:")
     print(f"Batch Size: {parameters['batch_size']}")
-    print(f"Number of agents: {parameters['number_of_agents']}")
-    print(f"Dataset episodes: {args.data_n_eps}")
+    print(f"Number of agents: Using mixed dataset for different agent numbers")
     if args.use_mix:
         print(f"Dataset ratio: {max_num_files_1} : {max_num_files_1} : {max_num_files_2}")
     elif args.use_or:
