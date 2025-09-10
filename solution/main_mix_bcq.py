@@ -252,9 +252,9 @@ if __name__ == "__main__":
         data_folder_10_b = f"./offlineData_10"
         data_folder_20_a = f"./orData_agent_20_normR"
         data_folder_20_b = f"./offlineData_20"
-        data_file_5 = collect_pickle_paths(data_folder_5_a, max_num_files_1/2) + collect_pickle_paths(data_folder_5_b, max_num_files_1/2)
-        data_file_10 = collect_pickle_paths(data_folder_10_a, max_num_files_1/2) + collect_pickle_paths(data_folder_10_b, max_num_files_1/2)
-        data_file_20 = collect_pickle_paths(data_folder_20_a, max_num_files_2/2) + collect_pickle_paths(data_folder_20_b, max_num_files_2/2)
+        data_file_5 = collect_pickle_paths(data_folder_5_a, int(max_num_files_1/2)) + collect_pickle_paths(data_folder_5_b, int(max_num_files_1/2))
+        data_file_10 = collect_pickle_paths(data_folder_10_a, int(max_num_files_1/2)) + collect_pickle_paths(data_folder_10_b, int(max_num_files_1/2))
+        data_file_20 = collect_pickle_paths(data_folder_20_a, int(max_num_files_2/2)) + collect_pickle_paths(data_folder_20_b, int(max_num_files_2/2))
         data_file = data_file_5 + data_file_10 + data_file_20
     else:
         data_folder_5_a = f"./offlineData_5"
