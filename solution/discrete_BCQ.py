@@ -27,9 +27,9 @@ class MultiAgentDiscreteBCQ:
         self.target_update_freq = target_update_freq
 
         self.Q = BCQNetwork().to(device)
-        self.Q2 = BCQNetwork().to(device)
+        # self.Q2 = BCQNetwork().to(device)
         self.Q_target = copy.deepcopy(self.Q).to(device)
-        self.Q2_target = copy.deepcopy(self.Q2).to(device)
+        # self.Q2_target = copy.deepcopy(self.Q2).to(device)
         self.optimizer = torch.optim.Adam(self.Q.parameters(), lr=lr)
 
         self.iterations = 0
@@ -57,22 +57,22 @@ class MultiAgentDiscreteBCQ:
             imt = imt_next_log.exp()
 
             # Use top-K
-            # mask = (imt / imt.max(dim=-1, keepdim=True)[0]) > self.threshold
-            k = max(1, int(self.num_actions * self.threshold))
-            topk = torch.topk(imt, k=k, dim=-1)
-            mask = torch.zeros_like(imt).scatter(-1, topk.indices, 1.0)
-            mask_bool = mask.bool()
+            mask = (imt / imt.max(dim=-1, keepdim=True)[0]) > self.threshold
+            # k = max(1, int(self.num_actions * self.threshold))
+            # topk = torch.topk(imt, k=k, dim=-1)
+            # mask = torch.zeros_like(imt).scatter(-1, topk.indices, 1.0)
+            # mask_bool = mask.bool()
 
-            q_masked = mask.float() * q_next + (~mask_bool).float() * -1e8
+            q_masked = mask.float() * q_next + (~mask).float() * -1e8
             next_action = q_masked.argmax(dim=-1, keepdim=True)
 
-            q_target1, _, _ = self.Q_target(next_agents_attr, next_forest, next_adjacency, next_node_order, next_edge_order)
-            q_target2, _, _ = self.Q2_target(next_agents_attr, next_forest, next_adjacency, next_node_order, next_edge_order)
+            q_target, _, _ = self.Q_target(next_agents_attr, next_forest, next_adjacency, next_node_order, next_edge_order)
+            # q_target2, _, _ = self.Q2_target(next_agents_attr, next_forest, next_adjacency, next_node_order, next_edge_order)
 
-            # max_next_q = q_target.gather(-1, next_action).squeeze(-1)
-            q_target_min = torch.min(q_target1.gather(-1, next_action), q_target2.gather(-1, next_action)).squeeze(-1)
-            # target_q = rewards + (1.0 - dones) * self.discount * max_next_q
-            target_q = rewards + (1.0 - dones) * self.discount * q_target_min
+            max_next_q = q_target.gather(-1, next_action).squeeze(-1)
+            # q_target_min = torch.min(q_target1.gather(-1, next_action), q_target2.gather(-1, next_action)).squeeze(-1)
+            target_q = rewards + (1.0 - dones) * self.discount * max_next_q
+            # target_q = rewards + (1.0 - dones) * self.discount * q_target_min
         
         q_pred, imt_log, i_logits = self.Q(agents_attr, forest, adjacency, node_order, edge_order)
         current_q = q_pred.gather(-1, actions.unsqueeze(-1)).squeeze(-1)
