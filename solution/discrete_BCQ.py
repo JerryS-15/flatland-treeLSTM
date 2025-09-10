@@ -55,7 +55,13 @@ class MultiAgentDiscreteBCQ:
         with torch.no_grad():
             q_next, imt_next_log, _ = self.Q(next_agents_attr, next_forest, next_adjacency, next_node_order, next_edge_order)
             imt = imt_next_log.exp()
-            mask = (imt / imt.max(dim=-1, keepdim=True)[0]) > self.threshold
+
+            # Use top-K
+            # mask = (imt / imt.max(dim=-1, keepdim=True)[0]) > self.threshold
+            k = max(1, int(self.num_actions * self.threshold))
+            topk = torch.topk(imt, k=k, dim=-1)
+            mask = torch.zeros_like(imt).scatter(-1, topk.indices, 1.0)
+
             q_masked = mask.float() * q_next + (~mask).float() * -1e8
             next_action = q_masked.argmax(dim=-1, keepdim=True)
 
