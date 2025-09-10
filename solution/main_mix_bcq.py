@@ -198,7 +198,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--max_timesteps", default=1e6, type=int)  # 1e6
     parser.add_argument("--seed", default=5000, type=int)
-    parser.add_argument("--data_n_eps", default=1000, type=int, help="Number of episodes that dataset have")
+    # parser.add_argument("--data_n_eps", default=1000, type=int, help="Number of episodes that dataset have")
     # parser.add_argument("--normal_reward", action="store_true", help="Use dataset with normed_rewards for agent")
     parser.add_argument("--use_or", "-or", action="store_true", help="Train with or-solution dataset.")
     parser.add_argument("--batch_size", "-bs", default=128, type=int, help="Training batch size.")
@@ -206,8 +206,6 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    n_agents = args.n_agents
-    n_eps = args.data_n_eps
     batch_size = args.batch_size
     max_num_files_1 = 400
     max_num_files_2 = 300
