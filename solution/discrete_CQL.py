@@ -98,9 +98,9 @@ class MultiAgentDiscreteCQL:
         # warmup_steps = 5000
         # apply_cql = self.iterations >= warmup_steps
 
-        alpha = self.log_alpha.exp() if self.auto_alpha else self.alpha
+        # alpha = self.log_alpha.exp() if self.auto_alpha else self.alpha
 
-        total_loss = bellman_loss + alpha * cql_penalty
+        total_loss = bellman_loss + self.alpha * cql_penalty
         # --------------- Total Loss ---------------
         # total_loss = bellman_loss + bc_lambda * bc_loss
         # total_loss = bellman_loss
