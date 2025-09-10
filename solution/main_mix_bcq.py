@@ -26,9 +26,9 @@ from flatland_cutils import TreeObsForRailEnv as TreeCutils
 from eval_env import LocalTestEnvWrapper
 from impl_config import FeatureParserConfig as fp
 from bcqActor import Actor
-from replayBuffer import ReplayBuffer
+from replayBufferMix import ReplayBuffer
 
-import discrete_BCQ
+import discrete_mix_BCQ
 
 
 def train_BCQ(replay_buffer, data_file, num_actions, args, parameters):
@@ -43,7 +43,7 @@ def train_BCQ(replay_buffer, data_file, num_actions, args, parameters):
         policy_name = f"bcq-ALL-agents-normReward-bs{parameters['batch_size']}"
     policy_path = f"./policy/{policy_name}"
 
-    policy = discrete_BCQ.MultiAgentDiscreteBCQ(
+    policy = discrete_mix_BCQ.MultiAgentDiscreteBCQ(
         num_actions,
         device=device
     )
