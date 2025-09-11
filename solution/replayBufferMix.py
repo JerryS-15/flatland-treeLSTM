@@ -41,11 +41,11 @@ class ReplayBuffer:
                 node_order.append(pad_array(np.array(o["node_order"]), FIXED_AGENT_NUM))
                 edge_order.append(pad_array(np.array(o["edge_order"]), FIXED_AGENT_NUM))
             return (
-                torch.FloatTensor(np.array(agent_attr), dtype=torch.float32),
-                torch.FloatTensor(np.array(forest), dtype=torch.float32),
-                torch.FloatTensor(np.array(adjacency), dtype=torch.float32),
-                torch.FloatTensor(np.array(node_order), dtype=torch.float32),
-                torch.FloatTensor(np.array(edge_order), dtype=torch.float32),
+                torch.FloatTensor(np.array(agent_attr)),
+                torch.FloatTensor(np.array(forest)),
+                torch.FloatTensor(np.array(adjacency)),
+                torch.FloatTensor(np.array(node_order)),
+                torch.FloatTensor(np.array(edge_order)),
             )
         
         actions = np.array([pad_1d(np.array(list(a.values())), FIXED_AGENT_NUM, pad_value=0) for a in action])
