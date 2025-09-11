@@ -25,7 +25,7 @@ class ReplayBuffer:
         next_obs = next_state
         
         def pad_array(arr, pad_to, pad_value=0):
-            pad_width = ((0, pad_to - arr.shape[0]), (0, 0))
+            pad_width = [(0, pad_to - arr.shape[0])] + [(0, 0)] * (arr.ndim - 1)
             return np.pad(arr, pad_width, mode='constant', constant_values=pad_value)
         
         def pad_1d(arr, pad_to, pad_value=0):
@@ -38,8 +38,8 @@ class ReplayBuffer:
                 agent_attr.append(pad_array(np.array(o["agent_attr"]), FIXED_AGENT_NUM))
                 forest.append(pad_array(np.array(o["forest"]), FIXED_AGENT_NUM))
                 adjacency.append(pad_array(np.array(o["adjacency"]), FIXED_AGENT_NUM))
-                node_order.append(pad_1d(np.array(o["node_order"]), FIXED_AGENT_NUM))
-                edge_order.append(pad_1d(np.array(o["edge_order"]), FIXED_AGENT_NUM))
+                node_order.append(pad_array(np.array(o["node_order"]), FIXED_AGENT_NUM))
+                edge_order.append(pad_array(np.array(o["edge_order"]), FIXED_AGENT_NUM))
             return (
                 torch.FloatTensor(agent_attr),
                 torch.FloatTensor(forest),
