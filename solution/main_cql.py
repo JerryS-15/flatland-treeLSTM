@@ -187,7 +187,7 @@ def train_globalCQL(replay_buffer, data_file, num_actions, args, parameters):
     policy.save(policy_path)
 
 
-def eval_policy(model_path, env_params, seed, eval_episodes=10, isGlobal=False):
+def eval_policy(model_path, env_params, seed, eval_episodes=100, isGlobal=False):
     """
     model_path:
     env_params: 
