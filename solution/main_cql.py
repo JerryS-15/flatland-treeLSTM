@@ -378,6 +378,7 @@ if __name__ == "__main__":
     print(f"Batch Size: {parameters['batch_size']}")
     print(f"Number of agents: {parameters['number_of_agents']}")
     print(f"Dataset episodes: {args.data_n_eps}")
+    print(f"CQL training parm - alpha: {args.CQL_alpha}")
     if args.use_mix:
         print(f"Dataset folder: {data_folder1} & {data_folder2}")
     elif args.use_or:
