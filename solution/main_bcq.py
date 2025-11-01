@@ -52,7 +52,8 @@ def train_BCQ(replay_buffer, data_file, num_actions, args, parameters):
 
     policy = discrete_BCQ.MultiAgentDiscreteBCQ(
         num_actions,
-        device=device
+        device=device,
+        lr=parameters["lr"]
     )
 
     replay_buffer.load_from_file(data_file)
@@ -200,7 +201,6 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--max_timesteps", default=1e6, type=int)  # 1e6
-    parser.add_argument("--CQL_alpha", default=1.0, type=float, help="Regularization strength for CQL")
     parser.add_argument("--seed", default=5000, type=int)
     parser.add_argument("--data_n_eps", default=1000, type=int, help="Number of episodes that dataset have")
     parser.add_argument("--normal_reward", action="store_true", help="Use dataset with normed_rewards for agent")
@@ -208,12 +208,14 @@ if __name__ == "__main__":
     parser.add_argument("--n_agents", default=5, type=int, help="Number of agents for training.")
     parser.add_argument("--batch_size", "-bs", default=128, type=int, help="Training batch size.")
     parser.add_argument("--use_mix", "-mix", action="store_true", help="Use mixed dataset for training.")
+    parser.add_argument("--learning_rate", "-lr", default=3e-4, type=float, help="Learning rate for BCQ.")
 
     args = parser.parse_args()
 
     n_agents = args.n_agents
     n_eps = args.data_n_eps
     batch_size = args.batch_size
+    lr = args.learning_rate
 
     flatland_parameters = {
 		# Evaluation
@@ -223,6 +225,7 @@ if __name__ == "__main__":
 		# "discount": 0.99,
 		# "buffer_size": 1e6,
 		"batch_size": batch_size,   # default setting - 128
+        "lr": lr,
 		# "optimizer": "Adam",
 		# "optimizer_parameters": {
 		# 	"lr": 1e-4,   # 0.0000625
@@ -284,6 +287,7 @@ if __name__ == "__main__":
     print(f"Batch Size: {parameters['batch_size']}")
     print(f"Number of agents: {parameters['number_of_agents']}")
     print(f"Dataset episodes: {args.data_n_eps}")
+    print(f"BCQ training parm - learning rate: {parameters['lr']}")
     if args.use_mix:
         print(f"Dataset folder: {data_folder1} & {data_folder2}")
     elif args.use_or:

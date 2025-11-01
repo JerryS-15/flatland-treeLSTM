@@ -13,7 +13,7 @@ class MultiAgentDiscreteBCQ:
         discount=0.99,
         tau=0.005,
         bcq_threshold=0.3,
-        lr=3e-4,
+        lr=3e-4, # 3e-4
         polyak_target_update=False,
         target_update_freq=1000
     ):
