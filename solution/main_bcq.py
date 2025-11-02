@@ -32,7 +32,7 @@ import discrete_BCQ
 
 
 def train_BCQ(replay_buffer, data_file, num_actions, args, parameters):
-    device = torch.device("cuda:4" if torch.cuda.is_available() else "cpu:4")
+    device = torch.device(f"cuda:{args.cuda}" if torch.cuda.is_available() else f"cpu:{args.cuda}")
     print(f"Using device: {device}")
     if args.normal_reward:
         if args.use_or:
@@ -209,6 +209,7 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", "-bs", default=128, type=int, help="Training batch size.")
     parser.add_argument("--use_mix", "-mix", action="store_true", help="Use mixed dataset for training.")
     parser.add_argument("--learning_rate", "-lr", default=3e-4, type=float, help="Learning rate for BCQ.")
+    parser.add_argument("--cuda", '-c', default=4, type=int, help="Use which gpu. Usually 0 - 7 on nrgpu.")
 
     args = parser.parse_args()
 
