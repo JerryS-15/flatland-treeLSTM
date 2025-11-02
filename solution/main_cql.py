@@ -38,7 +38,7 @@ import discrete_globalCQL
 def train_CQL(replay_buffer, data_file, num_actions, args, parameters):
     # setting = f"{args.env}_{args.seed}"
     # buffer_name = f"{args.buffer_name}_{setting}"
-    device = torch.device("cuda:5" if torch.cuda.is_available() else "cpu:5")
+    device = torch.device(f"cuda:{args.cuda}" if torch.cuda.is_available() else f"cpu:{args.cuda}")
     print(f"Using device: {device}")
     if args.normal_reward:
         if args.use_or:
@@ -302,6 +302,7 @@ if __name__ == "__main__":
     parser.add_argument("--n_agents", default=5, type=int, help="Number of agents for training.")
     parser.add_argument("--batch_size", "-bs", default=128, type=int, help="Training batch size.")
     parser.add_argument("--use_mix", "-mix", action="store_true", help="Use mixed dataset for training.")
+    parser.add_argument("--cuda", '-c', default=5, type=int, help="Use which gpu. Usually 0 - 7 on nrgpu.")
 
     args = parser.parse_args()
 
