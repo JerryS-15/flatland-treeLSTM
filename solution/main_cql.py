@@ -114,7 +114,7 @@ def train_CQL(replay_buffer, data_file, num_actions, args, parameters):
 
         policy.save(policy_path)
         model_path = f"{policy_path}_model.pt"
-        evaluations.append(eval_policy(model_path, parameters, args.seed))
+        evaluations.append(eval_policy(model_path, parameters, args.seed, args.eval_episodes))
         np.save(f"./results/{policy_name}", evaluations)
         
 
@@ -188,7 +188,7 @@ def train_globalCQL(replay_buffer, data_file, num_actions, args, parameters):
     policy.save(policy_path)
 
 
-def eval_policy(model_path, env_params, seed, eval_episodes=100, isGlobal=False):
+def eval_policy(model_path, env_params, seed, eval_episodes, isGlobal=False):
     """
     model_path:
     env_params: 
@@ -303,6 +303,7 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", "-bs", default=128, type=int, help="Training batch size.")
     parser.add_argument("--use_mix", "-mix", action="store_true", help="Use mixed dataset for training.")
     parser.add_argument("--cuda", '-c', default=5, type=int, help="Use which gpu. Usually 0 - 7 on nrgpu.")
+    parser.add_argument("--eval_episodes", '-e', default=10, type=int, help="Number of evaluation episodes. Default is 10.")
 
     args = parser.parse_args()
 
