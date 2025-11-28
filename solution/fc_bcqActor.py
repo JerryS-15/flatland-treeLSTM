@@ -18,9 +18,10 @@ class Actor:
         self.threshold = threshold
 
     def get_actions(self, obs_list, valid_actions, n_agents):
-        feature = self.get_feature(obs_list)
+        agents_attr, forest = self.get_feature(obs_list)
+        agens_state = forest[:,:,0,:]
         with torch.no_grad():
-            q_values, log_imt, _ = self.net(*feature)
+            q_values, log_imt, _ = self.net(agents_attr, agens_state)
             q_values = q_values[0].cpu().numpy()
             imt = log_imt.exp()[0].cpu().numpy()
         
