@@ -2,7 +2,8 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-from nn.net_cql import CQLNetwork
+# from nn.net_cql import CQLNetwork
+from nn.fc_cql import CQLNetwork
 import copy
 
 class MultiAgentDiscreteCQL:
