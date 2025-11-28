@@ -33,6 +33,7 @@ from replayBuffer import ReplayBuffer
 from utils import debug_show
 
 import discrete_CQL
+import discrete_fc_cql
 import discrete_globalCQL
 
 def train_CQL(replay_buffer, data_file, num_actions, args, parameters):
@@ -56,7 +57,13 @@ def train_CQL(replay_buffer, data_file, num_actions, args, parameters):
             policy_name = f"cql-{parameters['number_of_agents']}-agents-{args.data_n_eps}eps-bs{parameters['batch_size']}"
     policy_path = f"./policy/{policy_name}"
 
-    policy = discrete_CQL.MultiAgentDiscreteCQL(
+    # policy = discrete_CQL.MultiAgentDiscreteCQL(
+    #     num_actions,
+    #     device=device,
+    #     alpha=args.CQL_alpha
+    # )
+    print("*** Using FC + CQL ***")
+    policy = discrete_fc_cql.MultiAgentDiscreteCQL(
         num_actions,
         device=device,
         alpha=args.CQL_alpha

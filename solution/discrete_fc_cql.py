@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-from nn.net_cql import CQLNetwork
+from nn.fc_cql import CQLNetwork
 import copy
 
 class MultiAgentDiscreteCQL:
@@ -38,36 +38,23 @@ class MultiAgentDiscreteCQL:
     def train(self, batch):
         device = self.device
 
-        # agents_attr = torch.tensor(batch['agent_attr'], dtype=torch.float32).to(device)
-        # forest = torch.tensor(batch['forest'], dtype=torch.float32).to(device)
-        # adjacency = torch.tensor(batch['adjacency'], dtype=torch.int64).to(device)
-        # node_order = torch.tensor(batch['node_order'], dtype=torch.int64).to(device)
-        # edge_order = torch.tensor(batch['edge_order'], dtype=torch.int64).to(device)
-        # actions = torch.tensor(batch['actions'], dtype=torch.int64).to(device)
-        # rewards = torch.tensor(batch['all_rewards'], dtype=torch.float32).to(device)
-        # dones = torch.tensor(batch['dones'], dtype=torch.float32).to(device)
-        # next_agents_attr = torch.tensor(batch['next_agent_attr'], dtype=torch.float32).to(device)
-        # next_forest = torch.tensor(batch['next_forest'], dtype=torch.float32).to(device)
-        # next_adjacency = torch.tensor(batch['next_adjacency'], dtype=torch.int64).to(device)
-        # next_node_order = torch.tensor(batch['next_node_order'], dtype=torch.int64).to(device)
-        # next_edge_order = torch.tensor(batch['next_edge_order'], dtype=torch.int64).to(device)
         agents_attr = batch['agent_attr'].clone().detach().to(device)
         forest = batch['forest'].clone().detach().to(device)
         adjacency = batch['adjacency'].clone().detach().long().to(device)
-        node_order = batch['node_order'].clone().detach().long().to(device)
-        edge_order = batch['edge_order'].clone().detach().long().to(device)
+        # node_order = batch['node_order'].clone().detach().long().to(device)
+        # edge_order = batch['edge_order'].clone().detach().long().to(device)
         actions = batch['actions'].clone().detach().to(device)
         rewards = batch['all_rewards'].clone().detach().to(device)
         dones = batch['dones'].clone().detach().to(device)
         next_agents_attr = batch['next_agent_attr'].clone().detach().to(device)
         next_forest = batch['next_forest'].clone().detach().to(device)
         next_adjacency = batch['next_adjacency'].clone().detach().long().to(device)
-        next_node_order = batch['next_node_order'].clone().detach().long().to(device)
-        next_edge_order = batch['next_edge_order'].clone().detach().long().to(device)
+        # next_node_order = batch['next_node_order'].clone().detach().long().to(device)
+        # next_edge_order = batch['next_edge_order'].clone().detach().long().to(device)
 
         # Target Q
         with torch.no_grad():
-            next_q_values = self.target_model(next_agents_attr, next_forest, next_adjacency, next_node_order, next_edge_order)
+            next_q_values = self.target_model(next_agents_attr, next_forest)
             max_next_q, _ = next_q_values.max(dim=-1, keepdim=True)
             max_next_q = max_next_q.squeeze(-1)
             # print("**********DEBUG**********")
@@ -77,7 +64,7 @@ class MultiAgentDiscreteCQL:
             # print("**********DEBUG**********")
             target_q = rewards + (1.0 - dones) * self.discount * max_next_q
 
-        current_q_values = self.model(agents_attr, forest, adjacency, node_order, edge_order)
+        current_q_values = self.model(agents_attr, forest)
         chosen_q = current_q_values.gather(-1, actions.unsqueeze(-1)).squeeze(-1)
 
         bellman_loss = F.mse_loss(chosen_q, target_q)
@@ -136,7 +123,7 @@ class MultiAgentDiscreteCQL:
 
     def act(self, states_attr, forest, adjacency, node_order, edge_order, epsilon=0.05):
         with torch.no_grad():
-            q_values = self.model(states_attr, forest, adjacency, node_order, edge_order)
+            q_values = self.model(states_attr, forest)
             if np.random.rand() < epsilon:
                 return torch.randint(0, self.num_actions, q_values.shape[:-1], device=q_values.device)
             return q_values.argmax(dim=-1)
@@ -151,8 +138,3 @@ class MultiAgentDiscreteCQL:
         self.model.load_state_dict(torch.load(filename + "_model.pt", map_location=self.device))
         self.target_model = copy.deepcopy(self.model)
         self.optimizer.load_state_dict(torch.load(filename + "_optimizer", map_location=self.device))
-        # if self.auto_alpha:
-        #     self.log_alpha = torch.load(filename + "_log_alpha.pt", map_location=self.device)
-        #     self.log_alpha.requires_grad = True
-        #     self.alpha_optimizer = torch.optim.Adam([self.log_alpha])
-        
