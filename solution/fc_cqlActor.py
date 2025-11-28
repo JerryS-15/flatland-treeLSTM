@@ -7,8 +7,14 @@ from nn.fc_cql import CQLNetwork
 class Actor:
     def __init__(self, model_path) -> None:
         self.net = CQLNetwork()
+        ckpt = torch.load(model_path, map_location=torch.device("cpu"))
+        # if "model" in ckpt:
+        #     ckpt = ckpt["model"]
+        # self._build_forest_encoder_from_dummy()
+        # self.net.load_state_dict(ckpt, strict=True)
         self.net.load_state_dict(
-            torch.load(model_path, map_location=torch.device("cpu"))
+            torch.load(model_path, map_location=torch.device("cpu")),
+            strict=False
         )
         self.net.eval()
 
