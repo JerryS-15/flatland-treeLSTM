@@ -25,7 +25,7 @@ from flatland_cutils import TreeObsForRailEnv as TreeCutils
 
 from eval_env import LocalTestEnvWrapper
 from impl_config import FeatureParserConfig as fp
-from bcqActor import Actor
+from fc_bcqActor import Actor
 from replayBuffer import ReplayBuffer
 
 import discrete_fc_bcq
