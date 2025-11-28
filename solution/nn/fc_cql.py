@@ -52,11 +52,12 @@ class CQLNetwork(nn.Module):
             hidden_dim=2 * ns.hidden_sz,
             output_dim=ns.hidden_sz,
         )
-        self.forest_encoder = MLPEncoder(
-            input_dim=fp.node_sz * fp.max_nodes,      # flatten forest
-            hidden_dim=2 * ns.hidden_sz,
-            output_dim=ns.tree_embedding_sz,
-        )
+        # self.forest_encoder = MLPEncoder(
+        #     input_dim=fp.node_sz * fp.max_nodes,      # flatten forest
+        #     hidden_dim=2 * ns.hidden_sz,
+        #     output_dim=ns.tree_embedding_sz,
+        # )
+        self.forest_encoder = None
         embed_dim = ns.hidden_sz + ns.tree_embedding_sz
         self.transformer = nn.Sequential(
             Transformer(embed_dim, num_heads=4),
@@ -83,6 +84,15 @@ class CQLNetwork(nn.Module):
 
         # ---- Encode agent attributes ----
         attr_emb = self.attr_embedding(agents_attr)
+
+        # --- lazy create forest encoder ---
+        if self.forest_encoder is None:
+            input_dim = num_nodes * node_dim
+            self.forest_encoder = MLPEncoder(
+                input_dim=input_dim,
+                hidden_dim=2 * ns.hidden_sz,
+                output_dim=ns.tree_embedding_sz,
+            ).to(forest.device)
 
         # ---- Encode forest using MLP instead of TreeLSTM ----
         forest_flat = forest.reshape(B * N, num_nodes * node_dim)
