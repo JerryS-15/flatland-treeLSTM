@@ -54,10 +54,10 @@ class MultiAgentDiscreteBCQ:
         next_forest = batch['next_forest'].clone().detach().to(device)
 
         # 将 forest 转换成 agents_state
-        # agents_state = self._process_forest(forest)
-        # next_agents_state = self._process_forest(next_forest)
-        agents_state = forest
-        next_agents_state = next_forest
+        agents_state = self._process_forest(forest)
+        next_agents_state = self._process_forest(next_forest)
+        # agents_state = forest
+        # next_agents_state = next_forest
 
         with torch.no_grad():
             q_next, imt_next_log, _ = self.Q(next_agents_attr, next_agents_state)
@@ -103,8 +103,8 @@ class MultiAgentDiscreteBCQ:
 
     def select_action(self, agents_attr, forest, eval=False):
         with torch.no_grad():
-            agents_state = forest
-            # agents_state = self._process_forest(forest)
+            # agents_state = forest
+            agents_state = self._process_forest(forest)
             q, imt_log, _ = self.Q(agents_attr, agents_state)
             imt = imt_log.exp()
             mask = (imt / imt.max(dim=-1, keepdim=True)[0]) > self.threshold
