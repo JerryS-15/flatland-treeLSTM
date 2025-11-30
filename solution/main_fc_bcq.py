@@ -100,7 +100,7 @@ def train_BCQ(replay_buffer, data_file, num_actions, args, parameters):
     policy.save(policy_path)
 
 
-def eval_policy(model_path, env_params, seed, eval_episodes=100):
+def eval_policy(model_path, env_params, seed, eval_episodes=10):
     """
     model_path:
     env_params: 
