@@ -388,7 +388,7 @@ if __name__ == "__main__":
         print(f"Dataset folder: {or_folder}")
     else:
         if args.normal_reward:
-            print(f"Dataset folder: {data_folder1} & {data_folder2}")
+            print(f"Dataset folder: {data_folder2}")
         else:
             print(f"Dataset file: {data_file}")
     print("---------------------------------------")
