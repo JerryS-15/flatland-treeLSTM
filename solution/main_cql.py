@@ -303,7 +303,7 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", "-bs", default=128, type=int, help="Training batch size.")
     parser.add_argument("--use_mix", "-mix", action="store_true", help="Use mixed dataset for training.")
     parser.add_argument("--cuda", '-c', default=5, type=int, help="Use which gpu. Usually 0 - 7 on nrgpu.")
-    parser.add_argument("--eval_episodes", '-e', default=10, type=int, help="Number of evaluation episodes. Default is 10.")
+    parser.add_argument("--eval_episodes", '-e', default=100, type=int, help="Number of evaluation episodes. Default is 100.")
 
     args = parser.parse_args()
 
@@ -355,9 +355,10 @@ if __name__ == "__main__":
     else:
         if args.normal_reward:
             # data_file = f"offlineData/offline_rl_data_treeLSTM_{parameters['number_of_agents']}_agents_{args.data_n_eps}_episodes_normR.pkl"
-            data_folder1 = f"./offlineData_{n_agents}_noisy"
+            # data_folder1 = f"./offlineData_{n_agents}_noisy"
             data_folder2 = f"./offlineData_{n_agents}"
-            data_file = collect_pickle_paths(data_folder1) + collect_pickle_paths(data_folder2)
+            # data_file = collect_pickle_paths(data_folder1) + collect_pickle_paths(data_folder2)
+            data_file = collect_pickle_paths(data_folder2)
         else:
             data_file = f"offlineData/offline_rl_data_treeLSTM_{parameters['number_of_agents']}_agents_{args.data_n_eps}_episodes.pkl"
     # data_file = f"offlineData/offline_rl_data_treeLSTM_{parameters['number_of_agents']}_agents.pkl"

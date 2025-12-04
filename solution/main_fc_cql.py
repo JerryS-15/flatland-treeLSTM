@@ -233,7 +233,7 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", "-bs", default=128, type=int, help="Training batch size.")
     parser.add_argument("--use_mix", "-mix", action="store_true", help="Use mixed dataset for training.")
     parser.add_argument("--cuda", '-c', default=5, type=int, help="Use which gpu. Usually 0 - 7 on nrgpu.")
-    parser.add_argument("--eval_episodes", '-e', default=10, type=int, help="Number of evaluation episodes. Default is 10.")
+    parser.add_argument("--eval_episodes", '-e', default=100, type=int, help="Number of evaluation episodes. Default is 100.")
 
     args = parser.parse_args()
 
